@@ -51,7 +51,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="flex items-center justify-between h-16 bg-content-light dark:bg-content-dark border-b border-border-light dark:border-border-dark px-4 md:px-8"
-    >
+    > 
       {/* ────── LEFT ────── */}
       <div className="flex items-center gap-2">
         {/* Mobile menu button */}
@@ -59,11 +59,11 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           onClick={onMenuToggle}
-          className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 md:hidden"
+          className="p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 md:hidden"
           aria-label="Toggle sidebar"
         >
           <span className="material-symbols-outlined text-xl">menu</span>
-        </motion.button>
+        </motion.button> 
 
         {/* Title */}
         <motion.h2
@@ -71,7 +71,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
           className="text-lg font-bold text-primary"
-        >
+        > 
           {t('Dashboard') ?? 'Dashboard'}
         </motion.h2>
       </div>
@@ -79,26 +79,25 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
       {/* ────── RIGHT ────── */}
       <div className="flex items-center gap-3 md:gap-4">
 
-        {/* ── Search ── */}
+        {/* Search */}
         <motion.div
           initial={{ opacity: 0, scaleX: 0.9 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.15 }}
-          className="relative w-full max-w-xs"
+          className="relative hidden sm:block w-full max-w-xs"
         >
-          <label className="flex h-10 w-full items-stretch rounded-lg overflow-hidden">
-            <div className="flex items-center justify-center pl-3 bg-background-light dark:bg-background-dark">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <span className="material-symbols-outlined text-gray-500">search</span>
             </div>
-
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('Search for properties, users...') ?? 'Search for properties, users...'}
-              className="w-full bg-background-light dark:bg-background-dark px-3 text-sm text-text-light dark:text-text-dark placeholder-gray-500 focus:outline-none"
+              className="block w-full rounded-lg border-0 bg-gray-100 dark:bg-gray-800/50 py-2 pl-10 text-gray-900 dark:text-gray-200 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-primary/50 sm:text-sm sm:leading-6"
             />
-          </label>
+          </div>
         </motion.div>
 
         {/* ── Notifications ── */}
@@ -106,7 +105,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
           whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => alert('No new notifications')}
-          className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           aria-label="Notifications"
         >
           <span className="material-symbols-outlined">notifications</span>
@@ -129,7 +128,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
           transition={{ delay: 0.25 }}
           value={locale}
           onChange={(e) => setLocale(e.target.value as 'en' | 'am')}
-          className="rounded border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+          className="rounded-md border-0 bg-transparent py-1 pl-2 pr-7 text-gray-500 dark:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm"
           aria-label="Select language"
         >
           <option value="en">EN</option>
@@ -146,7 +145,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
           {displayUser ? (
             <Fragment>
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMenuOpen((prev) => !prev)}
                 className="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
                 aria-label="User menu"
               >
@@ -156,7 +155,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
                   width={32}
                   height={32}
                   className="rounded-full object-cover ring-2 ring-gray-300 dark:ring-gray-600"
-                />
+                /> 
                 <div className="hidden md:flex flex-col items-start">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {displayUser.name}
@@ -175,12 +174,12 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-md shadow-lg z-20"
+                    className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20"
                   >
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
+                      className="block w-full text-left px-4 py-2 text-sm text-danger hover:bg-gray-100 dark:hover:bg-gray-700"
+                    > 
                       Logout
                     </button>
                   </motion.div>

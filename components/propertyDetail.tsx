@@ -2,23 +2,38 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  doc,
+  getDoc,
+  addDoc,
+  collection,
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+} from 'firebase/firestore';
 import { db } from '@/app/firebaseConfig';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useUser } from '@/contexts/UserContext';
 
 interface PropertyDetailsProps {
   onBack?: () => void;
 }
 
-export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
-  const [saved, setSaved] = useState(true);
+export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDetailsProps) {
+  const { user } = useUser();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const propertyId = searchParams.get('id');
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any | null>(null);
 
   // Form state
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedDocId, setSavedDocId] = useState<string | null>(null);
   const [tourDate, setTourDate] = useState('');
   const [tourTime, setTourTime] = useState('9:00 AM');
   const [tourName, setTourName] = useState('');
@@ -38,6 +53,26 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
     };
     load();
   }, [propertyId]);
+
+  useEffect(() => {
+    if (!propertyId || !user?.email) {
+      setIsSaved(false);
+      return;
+    }
+
+    const checkSavedStatus = async () => {
+      const q = query(
+        collection(db, 'savedProperties'),
+        where('userEmail', '==', user.email),
+        where('propertyId', '==', propertyId)
+      );
+      const querySnapshot = await getDocs(q);
+      const isSaved = !querySnapshot.empty;
+      setIsSaved(isSaved);
+      setSavedDocId(isSaved ? querySnapshot.docs[0].id : null);
+    };
+    checkSavedStatus();
+  }, [propertyId, user]);
 
   const handleScheduleTour = async () => {
     setFormMessage({ type: '', text: '' });
@@ -84,7 +119,7 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
   const addressText = data?.location || '—';
 
   type MediaItem = { type: 'image' | 'video'; src: string };
-  const mapQuery = `${addressText}, Ethiopia`;
+  const mapQuery = `Ayat Real Estate, ${addressText}, Ethiopia`;
   const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   const mediaItems: MediaItem[] = useMemo(() => {
@@ -129,6 +164,55 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
     },
   };
 
+  const [page, setPage] = useState([0, 0]);
+  const imageIndex = page[0];
+
+  const paginate = (newDirection: number) => {
+    const newIndex = (page[0] + newDirection + imageUrls.length) % imageUrls.length;
+    setPage([newIndex, newDirection]);
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: { zIndex: 1, x: 0, opacity: 1 },
+    exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 1000 : -1000, opacity: 0 })
+  };
+
+  const handleContactAgentClick = () => {
+    router.push('/contactUs');
+  };
+
+  const handleSaveProperty = async () => {
+    if (!user?.email) {
+      alert('Please log in to save properties.');
+      router.push('/loginAndRegistration');
+      return;
+    }
+    if (!propertyId || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      if (isSaved && savedDocId) {
+        await deleteDoc(doc(db, 'savedProperties', savedDocId));
+        setIsSaved(false);
+        setSavedDocId(null);
+      } else {
+        const docRef = await addDoc(collection(db, 'savedProperties'), {
+          userEmail: user.email,
+          propertyId: propertyId,
+          savedAt: new Date().toISOString(),
+        });
+        setIsSaved(true);
+        setSavedDocId(docRef.id);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <motion.div 
       className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden bg-gray-50 dark:bg-gray-900" 
@@ -169,15 +253,16 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
               <span className="material-symbols-outlined">share</span>
             </motion.button>
             <motion.button 
-              className={`p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-300 ${saved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}
-              onClick={() => setSaved(!saved)}
+              className={`p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors duration-300 ${isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}
+              onClick={handleSaveProperty}
+              disabled={isSaving}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
               <motion.span 
                 className="material-symbols-outlined" 
-                style={{ fontVariationSettings: saved ? "'FILL' 1" : "'FILL' 0" }}
-                animate={{ scale: saved ? 1.1 : 1 }}
+                style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}
+                animate={{ scale: isSaved ? 1.1 : 1 }}
                 transition={{ duration: 0.2, type: 'spring', stiffness: 300, damping: 10 }}
               >
                 favorite
@@ -193,49 +278,69 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
             <div className="@[480px]:px-4">
               <div className="@[480px]:px-0 @[480px]:py-0">
                 <div className="relative min-h-[500px] rounded-2xl overflow-hidden bg-gray-800 shadow-lg">
-                  {currentMedia ? (
-                    currentMedia.type === 'image' ? (
-                      <motion.img 
-                        key={currentMedia.src}
-                        src={currentMedia.src}
-                        alt="Property media" 
-                        className="w-full h-[500px] object-cover" 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                      />
-                    ) : (
-                      <div className="relative">
-                        <video
-                          key={currentVideoIndex}
-                          ref={mainVideoRef}
-                          src={currentMedia.src}
-                          controls
-                          preload="metadata"
-                          playsInline
-                          className="w-full h-[500px] object-contain bg-black"
+                  {imageUrls.length > 0 ? (
+                    <>
+                      <AnimatePresence initial={false} custom={page[1]}>
+                        <motion.img
+                          key={page[0]}
+                          src={imageUrls[imageIndex]}
+                          custom={page[1]}
+                          variants={slideVariants}
+                          initial="enter"
+                          animate="center"
+                          exit="exit"
+                          transition={{ x: { type: 'spring', stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                          className="absolute w-full h-[500px] object-cover"
                         />
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <motion.button
-                            onClick={() => {
-                              const el = mainVideoRef.current;
-                              if (!el) return;
-                              if (document.fullscreenElement) {
-                                document.exitFullscreen?.();
-                              } else {
-                                el.requestFullscreen?.();
-                              }
-                            }}
-                            className="p-2 rounded-full bg-white/20 backdrop-blur text-white hover:bg-white/30 transition-colors duration-300"
-                            title="Toggle fullscreen"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <span className="material-symbols-outlined">fullscreen</span>
-                          </motion.button>
-                        </div>
+                      </AnimatePresence>
+                      <motion.div
+                        className="absolute top-1/2 left-2 z-10 p-2 bg-black/30 rounded-full cursor-pointer"
+                        onClick={() => paginate(-1)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <span className="material-symbols-outlined text-white">chevron_left</span>
+                      </motion.div>
+                      <motion.div
+                        className="absolute top-1/2 right-2 z-10 p-2 bg-black/30 rounded-full cursor-pointer"
+                        onClick={() => paginate(1)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <span className="material-symbols-outlined text-white">chevron_right</span>
+                      </motion.div>
+                    </>
+                  ) : currentMedia?.type === 'video' ? (
+                    <div className="relative">
+                      <video
+                        key={currentVideoIndex}
+                        ref={mainVideoRef}
+                        src={currentMedia.src}
+                        controls
+                        preload="metadata"
+                        playsInline
+                        className="w-full h-[500px] object-contain bg-black"
+                      />
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <motion.button
+                          onClick={() => {
+                            const el = mainVideoRef.current;
+                            if (!el) return;
+                            if (document.fullscreenElement) {
+                              document.exitFullscreen?.();
+                            } else {
+                              el.requestFullscreen?.();
+                            }
+                          }}
+                          className="p-2 rounded-full bg-white/20 backdrop-blur text-white hover:bg-white/30 transition-colors duration-300"
+                          title="Toggle fullscreen"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <span className="material-symbols-outlined">fullscreen</span>
+                        </motion.button>
                       </div>
-                    )
+                    </div>
                   ) : (
                     <img src={heroImage} alt="Property" className="w-full h-[500px] object-cover" />
                   )}
@@ -245,16 +350,16 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
                       <div className="relative">
                         <div id="image-strip" className="flex gap-2 overflow-x-auto no-scrollbar p-2 bg-black/30 backdrop-blur-sm rounded-xl scroll-smooth snap-x snap-mandatory">
                           {imageUrls.map((src, i) => ( // Updated
-                            <motion.button
+                            <motion.div
                               key={`img-${i}`}
-                              onClick={() => setCurrentIndex(i)}
-                              className={`flex-shrink-0 rounded-md overflow-hidden border ${i === currentIndex ? 'border-white' : 'border-white/40'} hover:opacity-90 transition-opacity duration-300 snap-start`}
+                              onClick={() => setPage([i, i > imageIndex ? 1 : -1])}
+                              className={`flex-shrink-0 rounded-md overflow-hidden border cursor-pointer ${i === imageIndex ? 'border-white' : 'border-white/40'} hover:opacity-90 transition-opacity duration-300 snap-start`}
                               title={`Image ${i + 1}`}
                               whileHover={{ scale: 1.05 }}
                               transition={{ duration: 0.2 }}
                             >
-                              <img src={src} alt="thumb" className="h-14 w-20 object-cover" />
-                            </motion.button>
+                              <img src={src} alt={`thumb ${i + 1}`} className="h-14 w-20 object-cover" />
+                            </motion.div>
                           ))}
                         </div>
                         {/* <motion.button
@@ -299,15 +404,16 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
                     </p>
                   </div>
                   <motion.button 
-                    className={`flex items-center gap-2 py-2 px-4 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-300 ${saved ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}
-                    onClick={() => setSaved(!saved)}
+                    className={`flex items-center gap-2 py-2 px-4 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-300 ${isSaved ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}
+                    onClick={handleSaveProperty}
+                    disabled={isSaving}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <motion.span 
                       className="material-symbols-outlined text-red-500" 
-                      style={{ fontVariationSettings: saved ? "'FILL' 1" : "'FILL' 0" }}
-                      animate={{ scale: saved ? 1.1 : 1 }}
+                      style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}
+                      animate={{ scale: isSaved ? 1.1 : 1 }}
                       transition={{ duration: 0.2, type: 'spring', stiffness: 300, damping: 10 }}
                     >
                       {saved ? 'favorite' : 'favorite_border'}
@@ -628,34 +734,15 @@ export default function PropertyDetails({ onBack }: PropertyDetailsProps) {
                     <p className="font-bold text-lg text-[#111618] dark:text-white font-display">Jane Doe</p>
                     <p className="text-gray-500 dark:text-gray-400 font-body">Luxury Real Estate Group</p>
                   </div>
-                  <form className="mt-6 space-y-4">
-                    <div>
-                      <label className="sr-only" htmlFor="name">Name</label>
-                      <input 
-                        className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700 dark:text-white p-3 text-sm font-body focus:ring-primary focus:border-primary transition-colors duration-300" 
-                        id="name" 
-                        placeholder="Name" 
-                        type="text" 
-                      />
-                    </div>
-                    <div>
-                      <label className="sr-only" htmlFor="email">Email</label>
-                      <input 
-                        className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700 dark:text-white p-3 text-sm font-body focus:ring-primary focus:border-primary transition-colors duration-300" 
-                        id="email" 
-                        placeholder="Email" 
-                        type="email" 
-                      />
-                    </div>
-                    <motion.button 
-                      className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors duration-300 font-display" 
-                      type="submit"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Send Message
-                    </motion.button>
-                  </form>
+                  <motion.button
+                    onClick={handleContactAgentClick}
+                    className="w-full mt-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors duration-300 font-display flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="material-symbols-outlined">email</span>
+                    Contact Agent
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
