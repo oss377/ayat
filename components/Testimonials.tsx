@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import Image from 'next/image';
@@ -57,9 +58,9 @@ export default function Testimonials() {
   const cur = testimonials[idx];
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900/50 py-16 md:py-24">
+    <motion.section className="bg-gray-50 dark:bg-gray-900/50 py-16 md:py-24" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5 }}>
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-text-light dark:text-text-dark pb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-text-light dark:text-white pb-12">
           {t('testimonials')}
         </h2>
 
@@ -79,7 +80,7 @@ export default function Testimonials() {
                       height={96}
                       className="rounded-full mx-auto mb-6 border-4 border-primary/50"
                     />
-                    <p className="text-2xl font-bold text-text-light dark:text-text-dark">
+                    <p className="text-2xl font-bold text-text-light dark:text-white">
                       {lang === 'en' ? c.nameEn : c.nameAm}
                     </p>
                     <div className="flex justify-center my-4">
@@ -123,11 +124,11 @@ export default function Testimonials() {
         </div>
 
         <div className="mt-12 text-center">
-          <button className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-all shadow-lg">
+          <motion.button className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-all shadow-lg" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             {t('discoverBtn')}
-          </button>
+          </motion.button>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

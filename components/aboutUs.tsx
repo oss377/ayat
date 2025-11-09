@@ -2,6 +2,7 @@
 'use client';
 
 import Head from 'next/head';
+import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 // Type definitions
@@ -57,7 +58,7 @@ const AboutUs = () => {
       <div className="relative flex h-auto w-full flex-col group/design-root overflow-x-hidden">
         {/* Hero Section */}
         <div className="@container">
-          <div className="@[480px]:p-4">
+          <motion.div className="@[480px]:p-4" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div 
               className="flex min-h-[60vh] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-lg items-center justify-center p-4"
               style={{
@@ -73,14 +74,15 @@ const AboutUs = () => {
                   Your trusted partner in finding the perfect property.
                 </h2>
               </div>
-              <button 
+              <motion.button 
                 className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-primary text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors font-display"
                 onClick={handleViewListings}
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               >
                 <span className="truncate">View Our Listings</span>
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Mission & Vision Section */}
@@ -91,7 +93,7 @@ const AboutUs = () => {
                 <h2 className="text-primary dark:text-secondary text-[32px] font-bold leading-tight tracking-[-0.015em] @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-3xl mx-auto font-display">
                   Our Mission & Vision
                 </h2>
-                <p className="text-neutral-text dark:text-neutral-dark-text text-base font-normal leading-normal max-w-3xl mx-auto font-display">
+                <p className="text-neutral-text dark:text-gray-300 text-base font-normal leading-normal max-w-3xl mx-auto font-display">
                   We are committed to providing exceptional service and building lasting relationships with our clients. Our vision is to be the leading real estate agency in the region, known for our integrity and expertise.
                 </p>
               </div>
@@ -150,12 +152,13 @@ const AboutUs = () => {
             <p className="text-white/80 mt-2 mb-6 font-display">
               Contact us today to speak with one of our experts.
             </p>
-            <button 
+            <motion.button 
               className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-primary text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors mx-auto font-display"
               onClick={handleContactUs}
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             >
               <span className="truncate">Contact Us</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -165,7 +168,7 @@ const AboutUs = () => {
 
 // Sub-components
 const MissionVisionCard: React.FC<MissionVisionCardProps> = ({ icon, title, description }) => (
-  <div className="flex flex-1 gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark p-6 flex-col items-center text-center">
+  <motion.div className="flex flex-1 gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-background-dark p-6 flex-col items-center text-center" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.5 }}>
     <span 
       className="material-symbols-outlined text-secondary"
       style={{ fontSize: '40px' }}
@@ -176,11 +179,11 @@ const MissionVisionCard: React.FC<MissionVisionCardProps> = ({ icon, title, desc
       <h3 className="text-primary dark:text-white text-xl font-bold leading-tight font-display">
         {title}
       </h3>
-      <p className="text-neutral-text dark:text-neutral-dark-text text-base font-normal leading-normal font-display">
+      <p className="text-neutral-text dark:text-gray-300 text-base font-normal leading-normal font-display">
         {description}
       </p>
     </div>
-  </div>
+  </motion.div>
 );
 
 const Timeline: React.FC = () => {
@@ -230,10 +233,10 @@ const TimelineEvent: React.FC<TimelineEventProps> = ({ event, isLast }) => (
       {!isLast && <div className="w-[2px] bg-gray-300 dark:bg-gray-600 h-full grow"></div>}
     </div>
     <div className={`flex flex-1 flex-col ${isLast ? 'pt-3' : 'pb-12 pt-3'}`}>
-      <p className="text-neutral-text dark:text-neutral-dark-text text-lg font-medium leading-normal font-display">
+      <p className="text-neutral-text dark:text-gray-200 text-lg font-medium leading-normal font-display">
         {event.year}
       </p>
-      <p className="text-neutral-text/80 dark:text-neutral-dark-text/80 text-base font-normal leading-normal font-display">
+      <p className="text-neutral-text/80 dark:text-gray-400 text-base font-normal leading-normal font-display">
         {event.description}
       </p>
     </div>
@@ -277,7 +280,7 @@ const TeamMembers: React.FC = () => {
           <p className="text-secondary font-medium font-display">
             {member.role}
           </p>
-          <p className="mt-2 text-neutral-text dark:text-neutral-dark-text text-sm font-display">
+          <p className="mt-2 text-neutral-text dark:text-gray-300 text-sm font-display">
             {member.description}
           </p>
         </div>
@@ -292,7 +295,7 @@ const Testimonial: React.FC = () => (
       <span className="material-symbols-outlined text-secondary text-5xl absolute -top-4 -left-4">
         format_quote
       </span>
-      <p className="text-neutral-text dark:text-neutral-dark-text italic text-lg mb-4 font-display">
+      <p className="text-neutral-text dark:text-gray-300 italic text-lg mb-4 font-display">
         "The team went above and beyond to find our dream home. Their professionalism and dedication were outstanding. We couldn't be happier!"
       </p>
       <div className="flex items-center justify-center">

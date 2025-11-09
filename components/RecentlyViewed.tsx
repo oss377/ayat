@@ -94,6 +94,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { collection, getDocs, query, limit, orderBy } from 'firebase/firestore';
 import { db } from '@/app/firebaseConfig';
+import { motion } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
 import { HeartIcon } from '@heroicons/react/24/outline';
 
@@ -175,10 +176,12 @@ export default function RecentlyViewed({ onCardClick }: RecentlyViewedProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {properties.map((property) => (
-            <div
+            <motion.div
               key={property.id}
               onClick={() => onCardClick(property.id)}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
             >
               <div className="relative">
                 <Image
@@ -208,7 +211,7 @@ export default function RecentlyViewed({ onCardClick }: RecentlyViewedProps) {
                   {property.location}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

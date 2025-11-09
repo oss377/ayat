@@ -1,6 +1,7 @@
 // components/Hero.tsx
 'use client';
 
+import { motion } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
 
 export default function Hero() {
@@ -15,11 +16,11 @@ export default function Hero() {
     >
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative container mx-auto px-4 text-center">
-        <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight">
+        <motion.h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
           {t('hero.title')}
-        </h1>
-        <p className="text-white/90 text-base md:text-lg mt-4 max-w-2xl mx-auto">{t('hero.subtitle')}</p>
-        <div className="mt-8 max-w-2xl mx-auto">
+        </motion.h1>
+        <motion.p className="text-white/90 text-base md:text-lg mt-4 max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>{t('hero.subtitle')}</motion.p>
+        <motion.div className="mt-8 max-w-2xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
           <div className="flex rounded-full overflow-hidden shadow-lg bg-white dark:bg-gray-800 p-1.5">
             <div className="flex items-center pl-4 text-subtle-light dark:text-subtle-dark">
               <span className="material-symbols-outlined">search</span>
@@ -29,11 +30,11 @@ export default function Hero() {
               placeholder={t('hero.searchPlaceholder')}
               className="flex-1 px-4 py-3 bg-transparent outline-none text-text-light dark:text-text-dark placeholder-gray-500"
             />
-            <button className="bg-primary text-white px-6 md:px-8 font-bold rounded-full hover:bg-primary/90 transition-colors">
+            <motion.button className="bg-primary text-white px-6 md:px-8 font-bold rounded-full hover:bg-primary/90 transition-colors" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               {t('hero.searchBtn')}
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

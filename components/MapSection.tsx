@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
 import Image from 'next/image';
 
@@ -10,15 +11,15 @@ export default function MapSection() {
   const { t } = useLang();
 
   return (
-    <section className="py-12 md:py-16">
+    <motion.section className="py-12 md:py-16" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.5 }}>
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-text-light dark:text-text-dark pb-8">
+        <h2 className="text-3xl md:text-4xl font-bold text-text-light dark:text-white pb-8">
           {t('mapTitle')}
         </h2>
         <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg">
           <Image src={mapImg} alt="Map" fill className="object-cover" />
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

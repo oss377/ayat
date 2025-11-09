@@ -6,7 +6,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { Bars3Icon as Menu, XMarkIcon as X, SunIcon as Sun, MoonIcon as Moon } from '@heroicons/react/24/outline';
 import AboutUs from './aboutUs';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -38,28 +40,30 @@ export default function Header() {
 
   return (
     <>
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+      <motion.header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm sticky top-0 z-50" initial={{ y: -100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-3xl">
-                real_estate_agent
-              </span>
-              <span className="text-2xl font-bold text-text-light dark:text-text-dark">
-                Homelys
-              </span>
+              <Image
+                src="/Wlogo.png"
+                alt="AYAT SHOP Logo"
+                width={84}
+                height={28}
+                className="object-contain rounded-full"
+              />
+              <span className="text-2xl font-bold text-text-light dark:text-white">AYAT SHOP</span>
             </Link>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-6">
               {navItems.map((item) => (
                 item.href ? (
-                  <Link key={item.key} href={item.href} className="text-text-light dark:text-text-dark hover:text-primary transition-colors">
+                  <Link key={item.key} href={item.href} className="text-text-light dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-colors">
                     {t(item.key)}
                   </Link>
                 ) : (
-                  <button key={item.key} onClick={item.action} className="text-text-light dark:text-text-dark hover:text-primary transition-colors">
+                  <button key={item.key} onClick={item.action} className="text-text-light dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-colors">
                     {t(item.key)}
                   </button>
                 )
@@ -107,11 +111,11 @@ export default function Header() {
               <div className="flex flex-col space-y-2">
                 {navItems.map((item) => (
                   item.href ? (
-                    <Link key={item.key} href={item.href} onClick={() => setMobileOpen(false)} className="block w-full text-left py-2 text-text-light dark:text-text-dark hover:text-primary">
+                    <Link key={item.key} href={item.href} onClick={() => setMobileOpen(false)} className="block w-full text-left py-2 text-text-light dark:text-gray-200 hover:text-primary">
                       {t(item.key)}
                     </Link>
                   ) : (
-                    <button key={item.key} onClick={() => handleNavClick(item)} className="block w-full text-left py-2 text-text-light dark:text-text-dark hover:text-primary">
+                    <button key={item.key} onClick={() => handleNavClick(item)} className="block w-full text-left py-2 text-text-light dark:text-gray-200 hover:text-primary">
                       {t(item.key)}
                     </button>
                   )
@@ -126,7 +130,7 @@ export default function Header() {
             </div>
           )}
         </div>
-      </header>
+      </motion.header>
 
       {/* About Us Modal */}
       {showAboutUs && (

@@ -1,9 +1,13 @@
 'use client';
 
+import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { useLang } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Footer() {
   const { t } = useLang();
+  const { theme } = useTheme();
 
   const quickLinks = ['buy', 'sell', 'rent'].map((k) => ({
     label: t(`nav.${k}`),
@@ -15,12 +19,21 @@ export default function Footer() {
   }));
 
   return (
-    <footer className="bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400">
+    <motion.footer className="bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.5 }}>
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h4 className="font-bold text-lg mb-4 text-text-light dark:text-white">{t('footer.company')}</h4>
-            <p className="text-sm ">{t('footer.tagline')}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <Image
+                src="/Wlogo.png"
+                alt="AYAT SHOP Logo"
+                width={56}
+                height={19}
+                className="object-contain rounded-full"
+              />
+              <span className="text-xl font-bold text-text-light dark:text-white">AYAT SHOP</span>
+            </div>
+            <p className="text-sm">{t('footer.tagline')}</p>
           </div>
 
           <div>
@@ -87,6 +100,6 @@ export default function Footer() {
           </p>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 }

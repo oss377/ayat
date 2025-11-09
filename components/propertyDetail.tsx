@@ -20,6 +20,7 @@ import { useUser } from '@/contexts/UserContext';
 
 interface PropertyDetailsProps {
   onBack?: () => void;
+  onPropertySaved?: () => void;
 }
 
 export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDetailsProps) {
@@ -40,6 +41,19 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
   const [tourEmail, setTourEmail] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [formMessage, setFormMessage] = useState({ type: '', text: '' });
+
+  // Mortgage Calculator State
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | '60/40'>('cash');
+  const [downPayment, setDownPayment] = useState(2500000);
+  const [firstPaymentPercent, setFirstPaymentPercent] = useState(20);
+  const [interestRate, setInterestRate] = useState(6.5);
+  const [loanTerm, setLoanTerm] = useState(30);
+
+  const propertyPrice = useMemo(() => {
+    const priceNum = typeof data?.price === 'number' ? data.price : parseFloat(String(data?.price ?? 0));
+    return isNaN(priceNum) ? 0 : priceNum;
+  }, [data]);
+
 
   useEffect(() => {
     const load = async () => {
@@ -114,13 +128,20 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
   const priceText = useMemo(() => {
     const priceNum = typeof data?.price === 'number' ? data.price : parseFloat(String(data?.price ?? ''));
     return isNaN(priceNum) ? '$—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(priceNum);
-  }, [data]);
+  }, [data?.price]);
 
   const addressText = data?.location || '—';
 
   type MediaItem = { type: 'image' | 'video'; src: string };
-  const mapQuery = `Ayat Real Estate, ${addressText}, Ethiopia`;
-  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  const mapUrl = useMemo(() => {
+    const base = 'https://www.google.com/maps/embed/v1/search?key=AIzaSyAhP7YflCjRJerGSn-ibiLOLSdOzloye70';
+
+    if (data?.location) {
+      // Use only the property's location for the map query
+      return `${base}&q=${encodeURIComponent(data.location)}`;
+    }
+    return `${base}&q=${encodeURIComponent("Addis Ababa")}`;
+  }, [data]);
 
   const mediaItems: MediaItem[] = useMemo(() => {
     const images: string[] = Array.isArray(data?.photoURLs) ? data!.photoURLs : [];
@@ -180,6 +201,46 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
     center: { zIndex: 1, x: 0, opacity: 1 },
     exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 1000 : -1000, opacity: 0 })
   };
+
+  const {
+    discountRate,
+    discountAmount,
+    monthlyPayment,
+    downPaymentAmount: sixtyFortyDownPayment,
+    loanAmount,
+  } = useMemo(() => {
+    const results = {
+      discountRate: 0,
+      discountAmount: 0,
+      monthlyPayment: 0,
+      loanAmount: 0,
+      downPaymentAmount: 0,
+    };
+
+    if (paymentMethod === 'cash') {
+      // Start discount at 5% for 10% down, up to 25% for 100% down.
+      // This is a linear scale between (10, 5) and (100, 25).
+      results.discountRate = 5 + (20 * (firstPaymentPercent - 10)) / 90;
+      results.discountAmount = propertyPrice * (results.discountRate / 100);
+      const finalPrice = propertyPrice - results.discountAmount;
+      const firstPaymentAmount = finalPrice * (firstPaymentPercent / 100);
+      results.loanAmount = finalPrice - firstPaymentAmount;
+      // No monthly payment for cash, but we can clear it.
+    } else { // 60/40
+      const currentInterest = 9;
+      const currentLoanTermMonths = 30 * 12; // 30 years
+      results.downPaymentAmount = propertyPrice * 0.6; // 60% down payment
+      results.loanAmount = propertyPrice * 0.4; // 40% is the loan amount
+
+      if (results.loanAmount > 0) {
+        const monthlyInterestRate = (currentInterest / 100) / 12;
+        const numerator = results.loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, currentLoanTermMonths);
+        const denominator = Math.pow(1 + monthlyInterestRate, currentLoanTermMonths) - 1;
+        results.monthlyPayment = denominator > 0 ? numerator / denominator : 0;
+      }
+    }
+    return results;
+  }, [paymentMethod, firstPaymentPercent, propertyPrice]);
 
   const handleContactAgentClick = () => {
     router.push('/contactUs');
@@ -362,24 +423,6 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                             </motion.div>
                           ))}
                         </div>
-                        {/* <motion.button
-                          onClick={() => setCurrentIndex((i) => (i - 1 + imageUrls.length) % imageUrls.length)}
-                          className="absolute -left-10 top-1/2 -translate-y-1/2 flex items-center p-2 rounded-full bg-white/20 backdrop-blur text-white hover:bg-white/30 transition-colors duration-300"
-                          title="Previous image"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <span className="material-symbols-outlined">chevron_left</span>
-                        </motion.button> */}
-                        {/* <motion.button
-                          onClick={() => setCurrentIndex((i) => (i + 1) % imageUrls.length)}
-                          className="absolute -right-10 top-1/2 -translate-y-1/2 flex items-center justify-end p-2 rounded-full bg-white/20 backdrop-blur text-white hover:bg-white/30 transition-colors duration-300"
-                          title="Next image"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <span className="material-symbols-outlined">chevron_right</span>
-                        </motion.button> */}
                       </div>
                     </div>
                   )}
@@ -416,10 +459,10 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                       animate={{ scale: isSaved ? 1.1 : 1 }}
                       transition={{ duration: 0.2, type: 'spring', stiffness: 300, damping: 10 }}
                     >
-                      {saved ? 'favorite' : 'favorite_border'}
+                      {isSaved ? 'favorite' : 'favorite_border'}
                     </motion.span>
                     <span className="font-medium text-sm font-display">
-                      {saved ? 'Saved' : 'Save'}
+                      {isSaved ? 'Saved' : 'Save'}
                     </span>
                   </motion.button>
                 </div>
@@ -509,7 +552,7 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="property-price">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="property-price-calc">
                         Property Price
                       </label>
                       <div className="mt-1 relative rounded-md shadow-sm">
@@ -518,70 +561,118 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                         </div>
                         <input 
                           className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-white p-3 pl-7 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
-                          id="property-price" 
-                          name="property-price" 
+                          id="property-price-calc" 
+                          name="property-price-calc" 
                           type="text" 
-                          value="12,500,000" 
+                          value={propertyPrice.toLocaleString('en-US')} 
                           readOnly
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="down-payment">
-                        Down Payment
-                      </label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                          <span className="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
-                        </div>
-                        <input 
-                          className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 pl-7 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
-                          id="down-payment" 
-                          name="down-payment" 
-                          placeholder="2,500,000" 
-                          type="text" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="interest-rate">
-                        Interest Rate
-                      </label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <input 
-                          className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 pr-8 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
-                          id="interest-rate" 
-                          name="interest-rate" 
-                          placeholder="6.5" 
-                          type="text" 
-                        />
-                        <div className="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center">
-                          <span className="text-gray-500 dark:text-gray-400 sm:text-sm">%</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="loan-term">
-                        Loan Term (Years)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="payment-method">
+                        Payment Method
                       </label>
                       <select 
                         className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
-                        id="loan-term" 
-                        name="loan-term"
+                        id="payment-method" 
+                        name="payment-method"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value as 'cash' | '60/40')}
                       >
-                        <option>30</option>
-                        <option>20</option>
-                        <option>15</option>
-                        <option>10</option>
+                        <option value="cash">Cash</option>
+                        <option value="60/40">60/40</option>
                       </select>
                     </div>
+                    {paymentMethod === 'cash' ? (
+                      <>
+                        <div>
+                          <label htmlFor="first-payment-percent" className="block text-sm font-medium text-gray-700 dark:text-gray-300">First Payment ({firstPaymentPercent}%)</label>
+                          <input
+                            id="first-payment-percent"
+                            type="range"
+                            min="10"
+                            max="100"
+                            step="5"
+                            value={firstPaymentPercent}
+                            onChange={(e) => setFirstPaymentPercent(Number(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Discount Rate: <span className="font-bold text-green-600">{discountRate.toFixed(1)}%</span></p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Discount Amount: <span className="font-bold text-green-600">{discountAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span></p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="down-payment-6040">
+                            Down Payment (60%)
+                          </label>
+                          <div className="mt-1 relative rounded-md shadow-sm">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+                            </div>
+                            <input 
+                              className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white p-3 pl-7 text-sm" 
+                              id="down-payment-6040" 
+                              type="text" 
+                              value={sixtyFortyDownPayment.toLocaleString('en-US')}
+                              readOnly
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="interest-rate">
+                            Interest Rate
+                          </label>
+                          <div className="mt-1 relative rounded-md shadow-sm">
+                            <input 
+                              className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white p-3 pr-8 text-sm" 
+                              id="interest-rate" 
+                              name="interest-rate" 
+                              type="text" 
+                              value="9"
+                              readOnly
+                            />
+                            <div className="pointer-events-none absolute inset-y-0 right-0 pr-3 flex items-center">
+                              <span className="text-gray-500 dark:text-gray-400 sm:text-sm">%</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="loan-term">
+                            Loan Term
+                          </label>
+                          <input 
+                            className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 dark:text-white p-3 text-sm" 
+                            id="loan-term" 
+                            name="loan-term"
+                            type="text"
+                            value="30 Years"
+                            readOnly
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="bg-gray-100 dark:bg-gray-700/50 rounded-lg flex flex-col items-center justify-center p-6 text-center">
-                    <p className="text-gray-600 dark:text-gray-300">Estimated Monthly Payment</p>
-                    <p className="text-4xl font-bold text-primary mt-2">$63,207</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Principal &amp; Interest only. Does not include taxes, insurance, or HOA fees.
-                    </p>
+                    {paymentMethod === '60/40' ? (
+                      <>
+                        <p className="text-gray-600 dark:text-gray-300">Estimated Monthly Payment</p>
+                        <p className="text-4xl font-bold text-primary mt-2">{monthlyPayment.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">For 30 years. Does not include taxes, insurance, or HOA fees.</p>
+                      </>
+                    ) : (
+                       <>
+                        <p className="text-gray-600 dark:text-gray-300">Final Price After Discount</p>
+                        <p className="text-4xl font-bold text-primary mt-2">{(propertyPrice - discountAmount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          Remaining balance after first payment: {loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -590,12 +681,12 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                 <h3 className="text-xl font-bold text-text-light dark:text-white mb-4">
                   Key Features
                 </h3>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
                   {[
-                    { icon: 'bed', label: 'Bedrooms', value: '5' },
-                    { icon: 'bathtub', label: 'Bathrooms', value: '6' },
-                    { icon: 'square_foot', label: 'Sq. Ft.', value: '5,200' },
-                    { icon: 'garage', label: 'Garage', value: '2' },
+                    { icon: 'bed', label: 'Bedrooms', value: data?.bedrooms || 'N/A' },
+                    { icon: 'bathtub', label: 'Bathrooms', value: data?.bathrooms || 'N/A' },
+                    { icon: 'square_foot', label: 'Sq. Ft.', value: data?.squareFeet ? new Intl.NumberFormat().format(data.squareFeet) : 'N/A' },
+                    { icon: 'garage', label: 'Garage', value: data?.garage || 'N/A' },
                   ].map((feature, i) => (
                     <motion.div 
                       key={i} 

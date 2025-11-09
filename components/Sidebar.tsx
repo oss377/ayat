@@ -2,6 +2,7 @@
 "use client";
 
 import { useAuth } from './AuthContext';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
@@ -33,15 +34,15 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="hidden md:flex flex-col w-64 bg-[var(--content-light)] dark:bg-[var(--content-dark)] border-r border-[var(--border-light)] dark:border-[var(--border-dark)]">
+    <motion.div className="hidden md:flex flex-col w-64 bg-[var(--content-light)] dark:bg-[var(--content-dark)] border-r border-[var(--border-light)] dark:border-[var(--border-dark)]" initial={{ x: -256 }} animate={{ x: 0 }} transition={{ duration: 0.5 }}>
       <div className="flex items-center justify-center h-16 border-b border-[var(--border-light)] dark:border-[var(--border-dark)]">
         <h1 className="text-xl font-bold text-[var(--primary)] dark:text-white">
           Real Estate Admin
         </h1>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-2">
-        {navItems.map((item) => (
-          <button
+        {navItems.map((item, index) => (
+          <motion.button
             key={item.label}
             onClick={() => handleItemClick(item)}
             className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
@@ -49,12 +50,15 @@ export default function Sidebar() {
                 ? "text-white bg-[var(--primary)]"
                 : `text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 ${item.isLogout ? 'text-danger' : ''}`
             }`}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 * index }}
           >
             <span className="material-symbols-outlined mr-3">{item.icon}</span>
             {item.label}
-          </button>
+          </motion.button>
         ))}
       </nav>
-    </div>
+    </motion.div>
   );
 }

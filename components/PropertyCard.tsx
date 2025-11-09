@@ -1,6 +1,7 @@
 // components/PropertyCard.tsx
 'use client';
 
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -41,9 +42,11 @@ export default function PropertyCard({ property, onCardClick }: PropertyCardProp
   const imageUrl = property.photoURLs?.[0] || '/placeholder-property.jpg';
 
   return (
-    <div
+    <motion.div
       onClick={onCardClick}
       className="bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden group hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
     >
       <div className="relative">
         <Image
@@ -72,6 +75,6 @@ export default function PropertyCard({ property, onCardClick }: PropertyCardProp
           {property.bedrooms} beds, {property.bathrooms} baths, {property.squareFeet?.toLocaleString()} sqft
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

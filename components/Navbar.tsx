@@ -1,10 +1,12 @@
 // components/Navbar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import AboutUs from './aboutUs';
 
 export default function Navbar() {
@@ -34,17 +36,18 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white dark:bg-background-dark shadow-sm sticky top-0 z-50">
+      <motion.nav className="bg-white dark:bg-background-dark shadow-sm sticky top-0 z-50" initial={{ y: -100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
-            <Link href={`/${lang}`} className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-3xl">
-                real_estate_agent
-              </span>
-              <span className="text-2xl font-bold text-text-light dark:text-text-dark">
-                Homely
-              </span>
+            <Link href={`/${lang}`} className="flex items-center">
+              <Image
+                src={theme === 'light' ? '/Wlogo.png' : '/Blogos.png'}
+                alt="Homely Logo"
+                width={120}
+                height={40}
+                className="object-contain"
+              />
             </Link>
 
             {/* Desktop Nav */}
@@ -54,7 +57,7 @@ export default function Navbar() {
                   <Link
                     key={item.key}
                     href={item.href}
-                    className="text-text-light dark:text-text-dark hover:text-primary transition-colors"
+                    className="text-text-light dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-colors"
                   >
                     {t(`nav.${item.key}`)}
                   </Link>
@@ -62,7 +65,7 @@ export default function Navbar() {
                   <button
                     key={item.key}
                     onClick={item.action}
-                    className="text-text-light dark:text-text-dark hover:text-primary transition-colors"
+                    className="text-text-light dark:text-gray-200 hover:text-primary dark:hover:text-primary transition-colors"
                   >
                     {t(`nav.${item.key}`)}
                   </button>
@@ -72,65 +75,69 @@ export default function Navbar() {
 
             {/* Right */}
             <div className="flex items-center gap-4">
-              <Link
+              <motion.a
                 href={`/${lang}/auth`}
                 className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary/90 hidden sm:block"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               >
                 Login/Sign Up
-              </Link>
-              <button
+              </motion.a>
+              <motion.button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700"
+                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
               >
                 <span className="material-symbols-outlined">
                   {theme === 'light' ? 'dark_mode' : 'light_mode'}
                 </span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => setMobileOpen(!mobileOpen)}
                 className="md:hidden p-2"
               >
-                <span className="material-symbols-outlined text-text-light dark:text-text-dark">
+                <span className="material-symbols-outlined text-text-light dark:text-white">
                   {mobileOpen ? 'close' : 'menu'}
                 </span>
-              </button>
+              </motion.button>
             </div>
           </div>
 
           {/* Mobile Menu */}
-          {mobileOpen && (
-            <div className="md:hidden py-4 space-y-2 border-t border-gray-300 dark:border-gray-700">
-              {navItems.map((item) => (
-                item.href ? (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className="block py-2 text-text-light dark:text-text-dark hover:text-primary"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {t(`nav.${item.key}`)}
-                  </Link>
-                ) : (
-                  <button
-                    key={item.key}
-                    onClick={() => handleNavClick(item)}
-                    className="block w-full text-left py-2 text-text-light dark:text-text-dark hover:text-primary"
-                  >
-                    {t(`nav.${item.key}`)}
-                  </button>
-                )
-              ))}
-              <Link
-                href={`/${lang}/auth`}
-                className="block w-full bg-primary text-white py-2 rounded-lg text-center"
-                onClick={() => setMobileOpen(false)}
-              >
-                Login/Sign Up
-              </Link>
-            </div>
-          )}
+          <AnimatePresence>
+            {mobileOpen && (
+              <motion.div className="md:hidden py-4 space-y-2 border-t border-gray-300 dark:border-gray-700" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                {navItems.map((item) => (
+                  item.href ? (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                    className="block py-2 text-text-light dark:text-gray-200 hover:text-primary"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {t(`nav.${item.key}`)}
+                    </Link>
+                  ) : (
+                    <button
+                      key={item.key}
+                      onClick={() => handleNavClick(item)}
+                    className="block w-full text-left py-2 text-text-light dark:text-gray-200 hover:text-primary"
+                    >
+                      {t(`nav.${item.key}`)}
+                    </button>
+                  )
+                ))}
+                <Link
+                  href={`/${lang}/auth`}
+                  className="block w-full bg-primary text-white py-2 rounded-lg text-center"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Login/Sign Up
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* About Us Modal/Overlay */}
       {showAboutUs && (
