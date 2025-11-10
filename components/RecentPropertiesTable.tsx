@@ -11,7 +11,7 @@ type UiProperty = {
   title: string;
   address: string;
   price: string;
-  status: 'Available' | 'Pending' | 'Sold';
+  status: 'Available' | 'Pending' | 'Sold' | 'For Sale';
   listed: string;
 };
 
@@ -54,14 +54,16 @@ export default function RecentPropertiesTable() {
     };
     load();
   }, []);
-  const getStatusStyle = (status: Property['status']) => {
+  const getStatusStyle = (status: UiProperty['status']) => {
     switch (status) {
-      case 'For Sale':
+      case 'For Sale': // added
         return 'bg-secondary/20 text-secondary';
       case 'Pending':
         return 'bg-yellow-500/20 text-yellow-600';
       case 'Sold':
         return 'bg-gray-500/20 text-gray-600 dark:text-gray-400';
+      case 'Available':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
     }
   };
 

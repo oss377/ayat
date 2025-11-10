@@ -19,9 +19,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const ok = await loginWithPassword(pwd, t);
-    if (!ok) setError(t('admin.invalidPassword'));
-    setSubmitting(false);
+    try {
+      await loginWithPassword(pwd);
+      // On success, the router will navigate away.
+    } catch (error) {
+      setError(t('admin.invalidPassword'));
+    }
+    setSubmitting(false); // This will run on failure, or briefly on success before navigation.
   };
 
   return (

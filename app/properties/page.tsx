@@ -33,8 +33,6 @@ export default function PropertiesPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'sale' | 'rent'>('all');
-  const [showDetail, setShowDetail] = useState<boolean>(!!propertyId);
-  const [showFilters, setShowFilters] = useState(false);
 
   // Filters
   const [locationFilter, setLocationFilter] = useState<string>('all');
@@ -107,8 +105,6 @@ export default function PropertiesPage() {
     setFiltered(results);
   }, [search, filter, properties, locationFilter, sizeFilter, floorFilter, propertyTypeFilter, bedFilter]);
 
-  useEffect(() => setShowDetail(!!propertyId), [propertyId]);
-
   const handlePropertyClick = (id: string) => {
     const compare = searchParams.get('compare') === 'true';
     if (compare) {
@@ -141,43 +137,34 @@ export default function PropertiesPage() {
 
   return (
     <>
-      {showDetail && propertyId ? (
+      {propertyId ? (
         <PropertyDetails onBack={() => router.push('/properties')} />
       ) : (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8">
           <div className="container mx-auto px-4 max-w-7xl">
 
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
+            {/* Header */} 
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <div className="flex items-center gap-2 md:gap-4">
                 <button
                   onClick={() => router.push('/')}
-                  className="p-3 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all hover:scale-110"
+                  className="p-2 md:p-3 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
                 >
                   <ArrowLeft className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 </button>
-                <h1 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
                   {t('properties') || 'Properties'}
                 </h1>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden p-3 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-xl"
-                >
-                  <Filter className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                </button>
               </div>
             </div>
 
             {/* Filters Panel */}
-            <div className={`transition-all duration-500 ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 lg:max-h-96 lg:opacity-100'} overflow-hidden`}>
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 mb-10 border border-white/30 dark:border-gray-700">
+            <div>
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-4 sm:p-6 mb-8 md:mb-10 border border-white/30 dark:border-gray-700">
 
                 {/* Search Bar - ENHANCED */}
                 <div className="relative mb-6">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 
+                  <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-5 w-5 
                     text-gray-500 dark:text-gray-400 
                     transition-colors duration-300" />
                   <input
@@ -185,8 +172,8 @@ export default function PropertiesPage() {
                     placeholder={t('searchPlaceholder') || 'Search by title, location...'}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-14 pr-6 py-5 
-                      text-lg font-medium
+                    className="w-full pl-12 sm:pl-14 pr-10 py-4 sm:py-5 
+                      text-base sm:text-lg font-medium
                       text-gray-900 dark:text-gray-100
                       placeholder:text-gray-500 dark:placeholder:text-gray-400
                       bg-gray-50/70 dark:bg-gray-700/70
@@ -210,13 +197,13 @@ export default function PropertiesPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
 
                   {/* Location */}
                   <select
                     value={locationFilter}
                     onChange={e => setLocationFilter(e.target.value)}
-                    className="p-4 rounded-2xl 
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl 
                       bg-gray-50/70 dark:bg-gray-700/70
                       border border-gray-300 dark:border-gray-600
                       text-gray-900 dark:text-gray-100
@@ -234,7 +221,7 @@ export default function PropertiesPage() {
                   <select
                     value={propertyTypeFilter}
                     onChange={e => setPropertyTypeFilter(e.target.value)}
-                    className="p-4 rounded-2xl 
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl 
                       bg-gray-50/70 dark:bg-gray-700/70
                       border border-gray-300 dark:border-gray-600
                       text-gray-900 dark:text-gray-100
@@ -251,7 +238,7 @@ export default function PropertiesPage() {
                   <select
                     value={bedFilter}
                     onChange={e => setBedFilter(e.target.value)}
-                    className="p-4 rounded-2xl 
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl 
                       bg-gray-50/70 dark:bg-gray-700/70
                       border border-gray-300 dark:border-gray-600
                       text-gray-900 dark:text-gray-100
@@ -268,7 +255,7 @@ export default function PropertiesPage() {
                   <select
                     value={sizeFilter}
                     onChange={e => setSizeFilter(e.target.value)}
-                    className="p-4 rounded-2xl 
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl 
                       bg-gray-50/70 dark:bg-gray-700/70
                       border border-gray-300 dark:border-gray-600
                       text-gray-900 dark:text-gray-100
@@ -285,7 +272,7 @@ export default function PropertiesPage() {
                   <select
                     value={floorFilter}
                     onChange={e => setFloorFilter(e.target.value)}
-                    className="p-4 rounded-2xl 
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl 
                       bg-gray-50/70 dark:bg-gray-700/70
                       border border-gray-300 dark:border-gray-600
                       text-gray-900 dark:text-gray-100
@@ -299,10 +286,10 @@ export default function PropertiesPage() {
                   </select>
                 </div>
 
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex justify-center lg:col-span-full">
                   <button
                     onClick={resetFilters}
-                    className="flex items-center gap-2 px-6 py-3 
+                    className="flex items-center gap-2 px-5 py-3 sm:px-6 
                       bg-gradient-to-r from-red-500 to-pink-500 
                       hover:from-red-600 hover:to-pink-600
                       text-white font-bold rounded-full 
@@ -317,12 +304,12 @@ export default function PropertiesPage() {
             </div>
 
             {/* Sale/Rent Tabs */}
-            <div className="flex justify-center gap-4 mb-10 flex-wrap">
+            <div className="flex justify-center gap-2 sm:gap-4 mb-8 md:mb-10 flex-wrap">
               {(['all', 'sale', 'rent'] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-10 py-4 rounded-full font-bold text-lg 
+                  className={`px-6 py-3 sm:px-10 sm:py-4 rounded-full font-bold text-base sm:text-lg 
                     transition-all transform hover:scale-105 shadow-xl
                     ${filter === f
                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
@@ -335,7 +322,7 @@ export default function PropertiesPage() {
             </div>
 
             {/* Results */}
-            <p className="text-center text-2xl font-bold text-gray-800 dark:text-gray-200 mb-10">
+            <p className="text-center text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-8 md:mb-10">
               {filtered.length} {t('propertiesFound') || 'properties found'}
             </p>
 
@@ -344,7 +331,7 @@ export default function PropertiesPage() {
               <div className="text-center py-32">
                 <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl p-16 shadow-2xl inline-block">
                   <Home className="h-24 w-24 text-gray-400 mx-auto mb-6" />
-                  <p className="text-3xl font-bold text-gray-700 dark:text-gray-300">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-700 dark:text-gray-300">
                     No properties found
                   </p>
                   <p className="text-gray-500 dark:text-gray-400 mt-3">Try different filters</p>
@@ -352,13 +339,13 @@ export default function PropertiesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {filtered.map((property) => (
+                {filtered.map((property, index) => (
                   <div
                     key={property.id}
                     onClick={() => handlePropertyClick(property.id)}
                     className="group bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 cursor-pointer border border-white/30 dark:border-gray-700"
                   >
-                    <div className="relative h-64 overflow-hidden rounded-t-3xl">
+                    <div className="relative h-56 sm:h-64 overflow-hidden rounded-t-3xl">
                       {property.photoURLs?.[0] ? (
                         <img
                           src={property.photoURLs[0]}
@@ -370,21 +357,21 @@ export default function PropertiesPage() {
                           <Home className="h-20 w-20 text-gray-400" />
                         </div>
                       )}
-                      <span className="absolute top-4 left-4 px-5 py-2 rounded-full text-white font-bold text-sm shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600">
+                      <span className="absolute top-3 left-3 px-4 py-1.5 rounded-full text-white font-bold text-xs shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600">
                         {property.type === 'rent' ? 'FOR RENT' : 'FOR SALE'}
                       </span>
                     </div>
 
-                    <div className="p-6">
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-1">
+                    <div className="p-5">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-1">
                         {property.title || 'Untitled'}
                       </h3>
-                      <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-4">
+                      <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-3">
                         <MapPin className="h-5 w-5" />
                         <span className="font-medium">{property.location || 'Unknown'}</span>
                       </div>
 
-                      <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-5">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">
                         ${property.price?.toLocaleString() || 'N/A'}
                         {property.type === 'rent' && <span className="text-lg">/mo</span>}
                       </div>
@@ -407,7 +394,7 @@ export default function PropertiesPage() {
                         </div>
                       </div>
 
-                      <button className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                      <button className="w-full py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                         View Details
                       </button>
                     </div>

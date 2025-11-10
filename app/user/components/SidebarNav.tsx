@@ -80,7 +80,7 @@ export default function SidebarNav({
       {/* Mobile Toggle */}
       <button
         id="user-sidebar-toggle"
-        onClick={handleToggle}
+        onClick={handleToggle} // Changed to handleToggle
         aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-full bg-primary text-white shadow-lg"
       >
