@@ -146,11 +146,11 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
   const mediaItems: MediaItem[] = useMemo(() => {
     const images: string[] = Array.isArray(data?.photoURLs) ? data!.photoURLs : [];
     const videos: string[] = Array.isArray(data?.videoURLs) ? data!.videoURLs : [];
-    return [
-      ...images.filter(Boolean).map((u) => ({ type: 'image' as const, src: u })),
-      ...videos.filter(Boolean).map((u) => ({ type: 'video' as const, src: u })),
-    ];
-  }, [data]);
+    const imageUrls = images.filter(Boolean).map((u) => ({ type: 'image' as const, src: u }));
+    const videoUrls = videos.filter(Boolean).map((u) => ({ type: 'video' as const, src: u }));
+    return [...imageUrls, ...videoUrls];
+  }, [data?.photoURLs, data?.videoURLs]);
+
   const imageUrls: string[] = useMemo(() => (Array.isArray(data?.photoURLs) ? data!.photoURLs.filter(Boolean) : []), [data]);
   const videoUrls: string[] = useMemo(() => (Array.isArray(data?.videoURLs) ? data!.videoURLs.filter(Boolean) : []), [data]);
   const [currentIndex, setCurrentIndex] = useState(0);

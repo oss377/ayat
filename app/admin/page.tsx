@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Sidebar from './components/Sidebar';
 import TopBar from '@/components/TopBar';
-import StatsCard from '@/components/StatsCard';
+import StatsCard from '@/components/StatsCard'; // Assuming this is a client component
 import SalesTrendChart from '@/components/SalesTrendChart';
 import PropertyTypeChart from '@/components/PropertyTypeChart';
 import RecentPropertiesTable from '@/components/RecentPropertiesTable';
@@ -14,11 +14,10 @@ import PropertyManagementPage from './components/PropertyManagementPage';
 import PropertyDetails from '@/components/propertyDetail';
 import { useUser } from '@/contexts/UserContext';
 
-
 type AdminSection = 'overview' | 'upload' | 'manage' | 'detail';
 
-export default function AdminDashboard() {
-  const searchParams = useSearchParams();
+function AdminDashboardClient() {
+  const searchParams = useSearchParams()!;
   const router = useRouter();
   const { user, loading } = useUser();
 
@@ -26,25 +25,17 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<AdminSection>(sectionFromQuery);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/auth');
+    }
+  }, [user, loading, router]);
   // Keep activeSection in sync with URL query
   useEffect(() => {
     if (sectionFromQuery !== activeSection) {
       setActiveSection(sectionFromQuery);
     }
   }, [sectionFromQuery, activeSection]);
-
-  // Redirect if not authenticated or not admin
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace('/auth');
-      }
-      // You can add admin role check here if you have role-based access
-      // else if (userData?.role !== 'admin') {
-      //   router.replace('/user');
-      // }
-    }
-  }, [user, loading, router]);
 
   // Show loading state or return null if not authenticated
   if (loading || !user) {
@@ -54,7 +45,7 @@ export default function AdminDashboard() {
       </div>
     );
   }
-  
+
   // Prepare user data for components
   const currentUser = {
     name: user.name || user.email?.split('@')[0] || 'Admin',
@@ -163,5 +154,21 @@ function OverviewSection({ user }: { user: any }) {
 
       <RecentPropertiesTable />
     </motion.div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<AdminPageLoading />}>
+      <AdminDashboardClient />
+    </Suspense>
+  );
+}
+
+function AdminPageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
   );
 }

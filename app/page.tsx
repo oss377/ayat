@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
@@ -12,7 +12,15 @@ import MapSection from '@/components/MapSection';
 import AgentCTA from '@/components/AgentCTA';
 import PropertyDetails from '../components/propertyDetail';
 
-export default function HomePage() {
+// Fallback component for Suspense
+function Loading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+}
+function HomePageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('id');
@@ -55,5 +63,10 @@ export default function HomePage() {
   );
 }
 
-
-
+export default function HomePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <HomePageClient />
+    </Suspense>
+  );
+}

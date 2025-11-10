@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/app/firebaseConfig';
@@ -22,7 +22,15 @@ interface Property {
   type?: 'sale' | 'rent';
 }
 
-export default function PropertiesPage() {
+function Loading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600"></div>
+    </div>
+  );
+}
+
+function PropertiesClientPage() {
   const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -406,5 +414,13 @@ export default function PropertiesPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function PropertiesPageWrapper() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <PropertiesClientPage />
+    </Suspense>
   );
 }
