@@ -26,7 +26,7 @@ export default function PropertyTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md">
       <table className="w-full text-sm text-left text-gray-700 dark:text-gray-300">
         <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-750/60 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 dark:supports-[backdrop-filter]:bg-gray-800/60 sticky top-0 z-10">
           <tr>

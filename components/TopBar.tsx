@@ -1,13 +1,15 @@
 // components/TopBar.tsx
 'use client';
 
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import Toggle from './ThemeToggle';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/contexts/LanguageContext';
 import { useUser } from '@/contexts/UserContext';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/app/firebaseConfig';
 
 interface TopBarProps {
   /** Called when the mobile menu button is pressed */
@@ -20,6 +22,105 @@ interface TopBarProps {
     role?: string;
   };
 }
+
+const NotificationDetailModal = ({ notification, onClose }: { notification: any, onClose: () => void }) => {
+  if (!notification) return null;
+
+  const formattedDate = notification.timestamp?.toDate().toLocaleString() || 'N/A';
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full p-6 border dark:border-gray-700"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Notification Details</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Received: {formattedDate}</p>
+          <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{notification.message}</p>
+          <button onClick={onClose} className="mt-6 w-full py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors">
+            Close
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+const Notifications = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'notifications'),
+      where('recipient', '==', 'admin')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort the notifications on the client-side
+      notifs.sort((a, b) => {
+        return (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0);
+      });
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.isRead).length);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.isRead) {
+      await updateDoc(doc(db, 'notifications', notification.id), { isRead: true });
+    }
+    setSelectedNotification(notification);
+    setIsOpen(false);
+  };
+
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+
+  return (
+    <div className="relative">
+      <motion.button
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        aria-label="Notifications"
+      >
+        <span className="material-symbols-outlined">notifications</span>
+        {unreadCount > 0 && (
+          <span className="absolute top-0 right-0 flex h-5 w-5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-white text-xs items-center justify-center">{unreadCount}</span>
+          </span>
+        )}
+      </motion.button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 mt-2 w-80 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
+            <div className="p-2 font-bold border-b dark:border-gray-700">Notifications</div>
+            {notifications.length === 0 ? <div className="p-4 text-sm text-gray-500">No new notifications</div> : notifications.map(n => (
+              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-3 border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ${!n.isRead ? 'font-bold' : ''}`}>{n.message}</div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <NotificationDetailModal notification={selectedNotification} onClose={() => setSelectedNotification(null)} />
+    </div>
+  );
+};
 
 export default function TopBar({ onMenuToggle, user }: TopBarProps) {
   const [search, setSearch] = useState('');
@@ -101,16 +202,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
         </motion.div>
 
         {/* ── Notifications ── */}
-        <motion.button
-          whileHover={{ scale: 1.15 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => alert('No new notifications')}
-          className="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          aria-label="Notifications"
-        >
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full animate-pulse" />
-        </motion.button>
+        <Notifications />
 
         {/* ── Dark‑mode Toggle ── */}
         <motion.div
@@ -187,7 +279,7 @@ export default function TopBar({ onMenuToggle, user }: TopBarProps) {
               </AnimatePresence>
             </Fragment>
           ) : (
-            <button onClick={() => router.push('/login')} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 active:scale-95 transition">
+            <button onClick={() => router.push('/loginAndRegistration')} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 active:scale-95 transition">
               Login
             </button>
           )}

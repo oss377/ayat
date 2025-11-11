@@ -15,7 +15,7 @@ export default function StatsCard({ title, value, change, positive = true }: Pro
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       whileHover={{ scale: 1.02 }}
-      className="flex flex-col gap-2 rounded-xl p-6 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark"
+      className="flex flex-col gap-2 rounded-xl p-6 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark shadow-sm hover:shadow-lg transition-shadow"
     >
       <p className="text-text-light dark:text-text-dark/80 text-base font-medium">{title}</p>
       <p className="text-text-light dark:text-text-dark text-3xl font-bold">{value}</p>

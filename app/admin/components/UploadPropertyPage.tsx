@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Upload, X, Camera, AlertCircle, CheckCircle, Loader2, Home, Bed, Bath, Square, Building2, DollarSign, MapPin } from 'lucide-react';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -256,17 +256,50 @@ export default function UploadPropertyPage({ editingProperty, onPropertySaved, o
         location: data.location,
         propertyType: data.propertyType,
         type: data.type,
-        floor: data.floor ? parseInt(data.floor.replace('G+', '')) : undefined,
-        bedrooms: data.bedrooms ? parseInt(data.bedrooms) : undefined,
-        bathrooms: data.bathrooms ? parseFloat(data.bathrooms) : undefined,
-        areaSqft: data.areaSqft ? parseInt(data.areaSqft) : undefined,
-        garageSpaces: data.garageSpaces ? parseInt(data.garageSpaces) : undefined,
+        floor: data.floor ? parseInt(data.floor.replace('G+', '')) : null,
+        bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
+        bathrooms: data.bathrooms ? parseFloat(data.bathrooms) : null,
+        areaSqft: data.areaSqft ? parseInt(data.areaSqft) : null,
+        garageSpaces: data.garageSpaces ? parseInt(data.garageSpaces) : null,
         amenities: data.amenities,
         agent: data.agent,
         photoURLs: photoURLs.length ? photoURLs.map(p => p.url) : existingPhotoURLs,
         videoURLs: videoURLs.length ? videoURLs.map(v => v.url) : existingVideoURLs,
         updatedAt: new Date().toISOString(),
       };
+
+      // --- NOTIFICATION LOGIC FOR UPDATES ---
+      if (isEditMode && editingProperty) {
+        const oldPrice = parseFloat(editingProperty.price);
+        const newPrice = payload.price;
+        const oldStatus = editingProperty.status;
+        const newStatus = payload.status;
+        let updateMessage = '';
+
+        if (oldPrice !== newPrice) {
+          updateMessage += `Price changed to ${newPrice.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}. `;
+        }
+        if (oldStatus !== newStatus) {
+          updateMessage += `Status is now ${newStatus}.`;
+        }
+
+        if (updateMessage) {
+          const q = query(collection(db, 'savedProperties'), where('propertyId', '==', actualPropertyId));
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach(async (savedDoc) => {
+            const savedData = savedDoc.data();
+            await addDoc(collection(db, 'notifications'), {
+              recipient: savedData.userId, // Assuming you store userId
+              message: `Update for saved property "${payload.title}": ${updateMessage}`,
+              type: 'property_update',
+              link: `/?id=${actualPropertyId}`,
+              isRead: false,
+              timestamp: new Date(),
+            });
+          });
+        }
+      }
+      // --- END NOTIFICATION LOGIC ---
 
       if (isEditMode && actualPropertyId) {
         await updateDoc(doc(db, 'properties', actualPropertyId), payload);
@@ -568,11 +601,11 @@ export default function UploadPropertyPage({ editingProperty, onPropertySaved, o
         )}
 
         {/* Buttons */}
-        <div className="flex justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <button type="button" onClick={onCancel || (() => router.push('/admin?section=manage'))} className="px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <button type="button" onClick={onCancel || (() => router.push('/admin?section=manage'))} className="px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             Cancel
           </button>
-          <button type="submit" disabled={isSubmitting} className="px-10 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-2xl flex items-center gap-3 disabled:opacity-70">
+          <button type="submit" disabled={isSubmitting} className="px-10 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-2xl flex items-center justify-center gap-3 disabled:opacity-70 transition-opacity">
             {isSubmitting ? <>Uploading <Loader2 className="animate-spin" /></> : <>{isEditMode ? 'Update' : 'Save'} Property</>}
           </button>
         </div>

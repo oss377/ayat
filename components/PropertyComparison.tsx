@@ -141,13 +141,16 @@ export default function PropertyComparison() {
       <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
 
         {/* Header */}
-        <div className="flex items-center bg-indigo-600 text-white p-4 pb-2 justify-between sticky top-0 z-10 print:hidden">
-          <button onClick={() => router.push('/')} className="text-3xl">Back</button>
-          <h2 className="text-xl font-bold">Compare Properties ({selected.length}/4)</h2>
-          <div className="flex gap-3">
-            <button onClick={copy} className="p-2"><span className="material-symbols-outlined">share</span></button>
-            <button onClick={downloadPDF} className="bg-white text-indigo-600 px-5 py-2 rounded-full font-bold flex items-center gap-2">
-              PDF
+        <div className="flex items-center bg-indigo-600 text-white p-4 justify-between sticky top-0 z-10 print:hidden">
+          <button onClick={() => router.push('/')} className="p-2 rounded-full hover:bg-indigo-500 transition-colors">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h2 className="text-lg sm:text-xl font-bold text-center">Compare ({selected.length}/4)</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={copy} className="p-2 rounded-full hover:bg-indigo-500 transition-colors"><span className="material-symbols-outlined">share</span></button>
+            <button onClick={downloadPDF} className="bg-white text-indigo-600 px-4 py-2 rounded-full font-bold flex items-center gap-2 text-sm sm:text-base">
+              <span className="material-symbols-outlined">download</span>
+              <span className="hidden sm:inline">PDF</span>
             </button>
           </div>
         </div>
@@ -156,10 +159,10 @@ export default function PropertyComparison() {
         <div className="grid grid-cols-4 gap-3 p-4 bg-gray-50 print:hidden">
           {selected.map(p => (
             <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden shadow-lg bg-cover" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), transparent), url(${p.photoURLs?.[0]})` }}>
-              <button onClick={() => remove(p.id)} className="absolute top-2 right-2 bg-white/90 p-1 rounded-full">
-                Close
+              <button onClick={() => remove(p.id)} className="absolute top-1.5 right-1.5 bg-black/50 text-white p-1 rounded-full hover:bg-red-500 transition-colors">
+                <span className="material-symbols-outlined text-base">close</span>
               </button>
-              <div className="absolute bottom-3 left-3 text-white font-bold text-xl drop-shadow-2xl">
+              <div className="absolute bottom-2 left-2 text-white font-bold text-sm sm:text-lg drop-shadow-lg">
                 ${p.price?.toLocaleString()}
               </div>
             </div>
@@ -233,31 +236,31 @@ export default function PropertyComparison() {
 
         {/* Modal */}
         {modalOpen && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 print:hidden" onClick={() => setModalOpen(false)}>
-            <div className="bg-white rounded-3xl shadow-3xl max-w-5xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="p-8 border-b-2 flex justify-between items-center">
-                <h2 className="text-3xl font-bold">Select up to 4 Homes</h2>
-                <button onClick={() => setModalOpen(false)} className="text-4xl">Close</button>
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 print:hidden" onClick={() => setModalOpen(false)} >
+            <div className="bg-white rounded-3xl shadow-3xl max-w-5xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="p-6 border-b-2 flex justify-between items-center">
+                <h2 className="text-xl sm:text-2xl font-bold">Select up to 4 Homes</h2>
+                <button onClick={() => setModalOpen(false)} className="p-2 rounded-full hover:bg-gray-100"><span className="material-symbols-outlined">close</span></button>
               </div>
-              <div className="p-8 overflow-y-auto max-h-[65vh] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="p-6 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {allProperties.map(p => {
                   const isChecked = checkedIds.includes(p.id) || selectedIds.includes(p.id);
                   const disabled = !isChecked && selected.length >= 4;
                   return (
-                    <label key={p.id} className={`block border-4 rounded-2xl overflow-hidden cursor-pointer transition-all ${isChecked ? 'border-indigo-600 shadow-xl ring-4 ring-indigo-100' : 'border-gray-200'} ${disabled ? 'opacity-50' : ''}`}>
+                    <label key={p.id} className={`relative block border-4 rounded-2xl overflow-hidden cursor-pointer transition-all ${isChecked ? 'border-indigo-600 shadow-xl ring-4 ring-indigo-100' : 'border-gray-200'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <input type="checkbox" checked={isChecked} disabled={disabled} onChange={() => toggle(p.id)} className="sr-only" />
                       <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${p.photoURLs?.[0]})` }} />
                       <div className="p-5 bg-white">
-                        <p className="font-bold text-indigo-600 text-xl">${p.price?.toLocaleString()}</p>
+                        <p className="font-bold text-indigo-600 text-lg sm:text-xl">${p.price?.toLocaleString()}</p>
                         <p className="text-sm text-gray-600 truncate">{p.title || p.location}</p>
                       </div>
                     </label>
                   );
                 })}
               </div>
-              <div className="p-8 bg-gray-50 border-t-2 flex justify-end gap-4">
-                <button onClick={() => setModalOpen(false)} className="px-8 py-4 border-2 border-gray-300 rounded-xl font-bold">Cancel</button>
-                <button onClick={apply} disabled={!checkedIds.length} className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-bold disabled:opacity-50 shadow-lg">
+              <div className="p-4 sm:p-6 bg-gray-50 border-t-2 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-auto">
+                <button onClick={() => setModalOpen(false)} className="px-6 py-3 border-2 border-gray-300 rounded-xl font-bold">Cancel</button>
+                <button onClick={apply} disabled={!checkedIds.length} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold disabled:opacity-50 shadow-lg flex items-center gap-2">
                   Add Selected
                 </button>
               </div>

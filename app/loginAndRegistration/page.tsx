@@ -55,20 +55,20 @@ const LoginForm = ({ formData, showPassword, loading, onInputChange, onTogglePas
   return (
     <motion.div key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-5">
       <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
-        {t('auth.welcomeBack')}
+        {t('welcomeBack')}
       </h1>
 
       <InputField 
-        label={t('auth.emailUsername')} 
-        placeholder={t('auth.placeholderEmailUser')} 
+        label={t('emailUsername')} 
+        placeholder={t('placeholderEmailUser')} 
         type="email" 
         name="email" 
         value={formData.email} 
         onChange={onInputChange} 
       />
       <InputField
-        label={t('auth.password')}
-        placeholder={t('auth.placeholderPassword')}
+        label={t('password')}
+        placeholder={t('placeholderPassword')}
         type={showPassword ? 'text' : 'password'}
         name="password"
         value={formData.password}
@@ -78,7 +78,7 @@ const LoginForm = ({ formData, showPassword, loading, onInputChange, onTogglePas
       />
 
       <p className="text-right text-sm text-teal-600 dark:text-teal-400 underline cursor-pointer hover:opacity-80">
-        {t('auth.forgotPassword')}
+        {t('forgotPassword')}
       </p>
 
       <motion.button
@@ -90,7 +90,7 @@ const LoginForm = ({ formData, showPassword, loading, onInputChange, onTogglePas
           loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-teal-500 to-purple-600 hover:from-teal-600 hover:to-purple-700'
         }`}
       >
-        {loading ? 'Signing in...' : t('auth.loginBtn')}
+        {loading ? 'Signing in...' : t('loginBtn')}
       </motion.button>
     </motion.div>
   );
@@ -100,20 +100,38 @@ const RegisterForm = ({ formData, showPassword, loading, onInputChange, onToggle
   return (
     <motion.div key="register" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
       <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
-        {t('auth.createAccount')}
+        {t('createAccount')}
       </h1>
 
+      <InputField
+        label={t('fullName') || 'Full Name'}
+        placeholder={t('placeholderFullName') || 'Enter your full name'}
+        type="text"
+        name="fullName"
+        value={formData.fullName}
+        onChange={onInputChange}
+      />
+
+      <InputField
+        label={t('phone') || 'Phone Number'}
+        placeholder={t('placeholderPhone') || 'Enter your phone number'}
+        type="tel"
+        name="phone"
+        value={formData.phone}
+        onChange={onInputChange}
+      />
+
       <InputField 
-        label={t('auth.email')} 
-        placeholder={t('auth.placeholderEmail')} 
+        label={t('email')} 
+        placeholder={t('placeholderEmail')} 
         type="email" 
         name="email" 
         value={formData.email} 
         onChange={onInputChange} 
       />
       <InputField
-        label={t('auth.password')}
-        placeholder={t('auth.placeholderCreatePassword')}
+        label={t('password')}
+        placeholder={t('placeholderCreatePassword')}
         type={showPassword ? 'text' : 'password'}
         name="password"
         value={formData.password}
@@ -122,8 +140,8 @@ const RegisterForm = ({ formData, showPassword, loading, onInputChange, onToggle
         togglePassword={onTogglePassword}
       />
       <InputField
-        label={t('auth.confirmPassword')}
-        placeholder={t('auth.placeholderConfirmPassword')}
+        label={t('confirmPassword')}
+        placeholder={t('placeholderConfirmPassword')}
         type={showPassword ? 'text' : 'password'}
         name="confirmPassword"
         value={formData.confirmPassword}
@@ -140,17 +158,17 @@ const RegisterForm = ({ formData, showPassword, loading, onInputChange, onToggle
           loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-teal-500 to-purple-600 hover:from-teal-600 hover:to-purple-700'
         }`}
       >
-        {loading ? 'Creating account...' : t('auth.registerBtn')}
+        {loading ? 'Creating account...' : t('registerBtn')}
       </motion.button>
 
       <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
-        {t('auth.termsPrefix')}{' '}
+        {t('termsPrefix')}{' '}
         <a href="#" className="text-teal-600 dark:text-teal-400 underline">
-          {t('auth.terms')}
+          {t('terms')}
         </a>{' '}
-        {t('auth.and')}{' '}
+        {t('and')}{' '}
         <a href="#" className="text-teal-600 dark:text-teal-400 underline">
-          {t('auth.privacy')}
+          {t('privacy')}
         </a>
         .
       </p>
@@ -170,6 +188,8 @@ export default function AuthPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    fullName: '', // Added fullName
+    phone: '',     // Added phone
   });
 
   // ────── AUTH LISTENER ──────
@@ -209,7 +229,7 @@ export default function AuthPage() {
   };
 
   const validateRegister = () => {
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.password || !formData.confirmPassword || !formData.fullName || !formData.phone) {
       toast.error('Please fill in all fields');
       return false;
     }
@@ -233,7 +253,7 @@ export default function AuthPage() {
     return true;
   };
 
-  const createCustomer = async (uid: string, email: string, displayName?: string) => {
+  const createCustomer = async (uid: string, email: string, fullName: string, phone: string, displayName?: string) => {
     try {
       // For testing: You can manually set a user as admin by checking their email
       const isAdmin = email === 'admin@example.com'; // Change this to your admin email
@@ -244,7 +264,9 @@ export default function AuthPage() {
       await setDoc(doc(db, 'customers', uid), {
         uid,
         email,
-        displayName: displayName || email.split('@')[0],
+        name: fullName,
+        phone: phone,
+        displayName: displayName || fullName || email.split('@')[0],
         role: role,
         createdAt: new Date().toISOString(),
       });
@@ -272,8 +294,8 @@ export default function AuthPage() {
       } else {
         console.log('Attempting registration...');
         userCredential = await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
-        console.log('User created, creating customer document...');
-        await createCustomer(userCredential.user.uid, formData.email.trim());
+        console.log('User created, creating customer document with full name and phone...');
+        await createCustomer(userCredential.user.uid, formData.email.trim(), formData.fullName, formData.phone);
       }
 
       console.log('Auth successful, user:', userCredential.user.email);
@@ -289,6 +311,8 @@ export default function AuthPage() {
         email: '',
         password: '',
         confirmPassword: '',
+        fullName: '',
+        phone: '',
       });
 
     } catch (error: any) {
@@ -341,7 +365,7 @@ export default function AuthPage() {
       const custSnap = await getDoc(doc(db, 'customers', user.uid));
       if (!custSnap.exists()) {
         console.log('Creating customer document for Google user...');
-        await createCustomer(user.uid, user.email!, user.displayName || undefined);
+        await createCustomer(user.uid, user.email!, user.displayName || '', user.phoneNumber || '');
       }
 
       // Refresh user data in context
@@ -356,6 +380,8 @@ export default function AuthPage() {
         email: '',
         password: '',
         confirmPassword: '',
+        fullName: '',
+        phone: '',
       });
 
     } catch (error: any) {
@@ -439,7 +465,7 @@ export default function AuthPage() {
             <div className="relative flex items-center py-6">
               <div className="flex-grow border-t border-gray-300 dark:border-gray-600" />
               <span className="mx-4 text-sm text-gray-500 dark:text-gray-400">
-                {t('auth.orContinue')}
+                {t('orContinue')}
               </span>
               <div className="flex-grow border-t border-gray-300 dark:border-gray-600" />
             </div>
@@ -453,7 +479,7 @@ export default function AuthPage() {
             >
               <Image src={googleIcon} alt="Google" width={24} height={24} className="mr-3" />
               <span className="font-medium text-gray-700 dark:text-white">
-                {t('auth.google')}
+                {t('google')}
               </span>
             </motion.button>
           </div>

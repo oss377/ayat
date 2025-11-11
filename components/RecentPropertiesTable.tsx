@@ -72,7 +72,7 @@ export default function RecentPropertiesTable() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="mt-8 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden"
+      className="mt-8 bg-content-light dark:bg-content-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm"
     >
       <div className="p-4 sm:p-6 flex justify-between items-center">
         <h3 className="text-lg font-bold text-text-light dark:text-text-dark">Recent Properties</h3>

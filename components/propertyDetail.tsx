@@ -37,8 +37,9 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
   const [savedDocId, setSavedDocId] = useState<string | null>(null);
   const [tourDate, setTourDate] = useState('');
   const [tourTime, setTourTime] = useState('9:00 AM');
-  const [tourName, setTourName] = useState('');
-  const [tourEmail, setTourEmail] = useState('');
+  const [tourName, setTourName] = useState(user?.name || '');
+  const [tourEmail, setTourEmail] = useState(user?.email || '');
+  const [tourPhone, setTourPhone] = useState('');
   const [isScheduling, setIsScheduling] = useState(false);
   const [formMessage, setFormMessage] = useState({ type: '', text: '' });
 
@@ -88,9 +89,16 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
     checkSavedStatus();
   }, [propertyId, user]);
 
+  useEffect(() => {
+    if (user) {
+      setTourName(user.name || '');
+      setTourEmail(user.email || '');
+    }
+  }, [user]);
+
   const handleScheduleTour = async () => {
     setFormMessage({ type: '', text: '' });
-    if (!tourDate || !tourTime || !tourName || !tourEmail) {
+    if (!tourDate || !tourTime || !tourName || !tourEmail || (!user && !tourPhone)) {
       setFormMessage({ type: 'error', text: 'Please fill out all fields.' });
       return;
     }
@@ -104,7 +112,17 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
         time: tourTime,
         name: tourName,
         email: tourEmail,
+        phone: tourPhone, // Add phone number to the schedule
         scheduledAt: new Date(),
+      });
+
+      // Create notification for admin
+      await addDoc(collection(db, 'notifications'), {
+        recipient: 'admin',
+        message: `${tourName} scheduled a tour for ${data?.location || 'a property'}`,
+        type: 'new_schedule',
+        isRead: false,
+        timestamp: new Date(),
       });
       setFormMessage({ type: 'success', text: 'Schedule uploaded successfully!' });
       // Clear form
@@ -112,6 +130,7 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
       setTourTime('9:00 AM');
       setTourName('');
       setTourEmail('');
+      setTourPhone('');
     } catch (error) {
       console.error("Error scheduling tour: ", error);
       setFormMessage({ type: 'error', text: 'Failed to schedule tour. Please try again.' });
@@ -764,25 +783,40 @@ export default function PropertyDetails({ onBack, onPropertySaved }: PropertyDet
                   <div>
                     <label className="sr-only" htmlFor="name-tour">Name</label>
                     <input 
-                      className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
+                      className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300"
                       id="name-tour" 
                       placeholder="Your Name" 
                       type="text" 
                       value={tourName}
                       onChange={(e) => setTourName(e.target.value)}
+                      readOnly={!!user?.name}
                     />
                   </div>
                   <div>
                     <label className="sr-only" htmlFor="email-tour">Email</label>
                     <input 
-                      className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300" 
+                      className={`w-full rounded-lg border-gray-200 dark:border-gray-700 p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300 ${user ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-700'}`}
                       id="email-tour" 
                       placeholder="Your Email" 
                       type="email" 
                       value={tourEmail}
                       onChange={(e) => setTourEmail(e.target.value)}
+                      readOnly={!!user?.email}
                     />
                   </div>
+                  {!user && (
+                  <div>
+                    <label className="sr-only" htmlFor="phone-tour">Phone</label>
+                    <input
+                      className="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 dark:text-white p-3 text-sm focus:ring-primary focus:border-primary transition-colors duration-300"
+                      id="phone-tour"
+                      placeholder="Your Phone Number"
+                      type="tel"
+                      value={tourPhone}
+                      onChange={(e) => setTourPhone(e.target.value)}
+                    />
+                  </div>
+                  )}
                   <motion.button 
                     className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                     type="button" 

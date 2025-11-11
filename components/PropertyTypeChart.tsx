@@ -6,7 +6,7 @@ export default function PropertyTypeChart() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="flex flex-col gap-4 rounded-xl border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark p-6"
+      className="flex flex-col gap-4 rounded-xl border border-border-light dark:border-border-dark bg-content-light dark:bg-content-dark p-6 shadow-sm"
     >
       <p className="text-text-light dark:text-text-dark text-lg font-medium">Property by Type</p>
 

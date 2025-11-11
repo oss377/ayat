@@ -1,14 +1,87 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { Bars3Icon as Menu, XMarkIcon as X, SunIcon as Sun, MoonIcon as Moon } from '@heroicons/react/24/outline';
 import AboutUs from './aboutUs';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useUser } from '@/contexts/UserContext';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/app/firebaseConfig';
+
+interface Notification {
+  id: string;
+  isRead: boolean;
+  message: string;
+  link?: string;
+  [key: string]: any;
+}
+
+const UserNotifications = () => {
+  const { user } = useUser();
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('recipient', '==', user.uid),
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.isRead).length);
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.isRead) {
+      await updateDoc(doc(db, 'notifications', notification.id), { isRead: true });
+    }
+    if (notification.link) {
+      router.push(notification.link);
+    }
+    setIsOpen(false);
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="relative">
+      <button onClick={() => setIsOpen(!isOpen)} className="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+        <span className="material-symbols-outlined">notifications</span>
+        {unreadCount > 0 && (
+           <span className="absolute top-0 right-0 flex h-5 w-5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-white text-xs items-center justify-center">{unreadCount}</span>
+          </span>
+        )}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 mt-2 w-80 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-20">
+            <div className="p-2 font-bold border-b dark:border-gray-700">Notifications</div>
+            {notifications.length === 0 ? <div className="p-4 text-sm text-gray-500">No new notifications</div> : notifications.map(n => (
+              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-3 border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ${!n.isRead ? 'font-bold' : ''}`}>{n.message}</div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -16,6 +89,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showAboutUs, setShowAboutUs] = useState(false);
   const router = useRouter();
+  const { user } = useUser();
 
   const navItems = [
     { key: 'compareProperties', href: '/compareProperties' },
@@ -82,15 +156,12 @@ export default function Header() {
                 <option value="am">AM</option>
               </select>
 
-              {/* Theme toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <UserNotifications />
+
+              <button onClick={toggleTheme} className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               </button>
 
-              {/* Login */}
               <button
                 onClick={handleLoginClick}
                 className="bg-primary text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-all hidden md:block"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Sidebar from './components/Sidebar';
@@ -9,12 +9,18 @@ import StatsCard from '@/components/StatsCard'; // Assuming this is a client com
 import SalesTrendChart from '@/components/SalesTrendChart';
 import PropertyTypeChart from '@/components/PropertyTypeChart';
 import RecentPropertiesTable from '@/components/RecentPropertiesTable';
+import UserTable from '@/components/UserTable';
 import UploadPropertyPage from './components/UploadPropertyPage';
+import SchedulesPage from './components/SchedulesPage';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/app/firebaseConfig';
 import PropertyManagementPage from './components/PropertyManagementPage';
 import PropertyDetails from '@/components/propertyDetail';
 import { useUser } from '@/contexts/UserContext';
+import { User } from 'firebase/auth';
 
-type AdminSection = 'overview' | 'upload' | 'manage' | 'detail';
+type AdminSection = 'overview' | 'upload' | 'manage' | 'detail' | 'analytics' | 'users' | 'settings' | 'schedules';
+
 
 function AdminDashboardClient() {
   const searchParams = useSearchParams()!;
@@ -60,7 +66,7 @@ function AdminDashboardClient() {
       {/* Sidebar */}
       <Sidebar
         activeSection={activeSection === 'detail' ? 'manage' : activeSection}
-        onSectionChange={(s: 'overview' | 'upload' | 'manage') => {
+        onSectionChange={(s: AdminSection) => {
           const params = new URLSearchParams(Array.from(searchParams.entries()));
           params.set('section', s);
           router.push(`/admin?${params.toString()}`);
@@ -94,7 +100,9 @@ function AdminDashboardClient() {
           </div>
 
           {activeSection === 'overview' && <OverviewSection user={currentUser} />}
+          {activeSection === 'schedules' && <SchedulesPage />}
           {activeSection === 'upload' && <UploadPropertyPage />}
+          {activeSection === 'users' && <UserManagementPage />}
           {activeSection === 'manage' && <PropertyManagementPage />}
           {activeSection === 'detail' && (
             <PropertyDetails onBack={() => {
@@ -103,6 +111,8 @@ function AdminDashboardClient() {
               router.push(`/admin?${params.toString()}`);
             }} />
           )}
+          {activeSection === 'analytics' && <SalesAnalyticsPage />}
+          {activeSection === 'settings' && <SettingsPage />}
         </main>
       </div>
     </div>
@@ -110,15 +120,67 @@ function AdminDashboardClient() {
 }
 
 function OverviewSection({ user }: { user: any }) {
+  const [stats, setStats] = useState({
+    totalProperties: 0,
+    forSale: 0,
+    totalSold: 0,
+    activeUsers: 0,
+    totalSchedules: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [
+          propertiesSnap,
+          forSaleSnap,
+          soldSnap,
+          usersSnap,
+          schedulesSnap,
+        ] = await Promise.all([
+          getDocs(collection(db, 'properties')),
+          getDocs(query(collection(db, 'properties'), where('status', 'in', ['Available', 'For Sale']))),
+          getDocs(query(collection(db, 'properties'), where('status', '==', 'Sold'))),
+          getDocs(collection(db, 'customers')),
+          getDocs(collection(db, 'customerSchedule')),
+        ]);
+
+        setStats({
+          totalProperties: propertiesSnap.size,
+          forSale: forSaleSnap.size,
+          totalSold: soldSnap.size,
+          activeUsers: usersSnap.size,
+          totalSchedules: schedulesSnap.size,
+        });
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="space-y-8">
       {/* Admin Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard title="Total Properties" value="1,234" change="+12%" />
-        <StatsCard title="For Sale" value="567" change="-5%" positive={false} />
-        <StatsCard title="Monthly Sales" value="$2.5M" change="+8%" />
-        <StatsCard title="Active Users" value="89" change="+15%" />
-      </div>
+      {loadingStats ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatsCard title="Total Properties" value={stats.totalProperties.toLocaleString()} change="+12%" />
+          <StatsCard title="For Sale" value={stats.forSale.toLocaleString()} change="-5%" positive={false} />
+          <StatsCard title="Total Sold" value={stats.totalSold.toLocaleString()} change="+8%" />
+          <StatsCard title="Active Users" value={stats.activeUsers.toLocaleString()} change="+15%" />
+          <StatsCard title="Total Schedules" value={stats.totalSchedules.toLocaleString()} change="+2" />
+        </div>
+      )}
 
       {/* Admin Info Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -143,6 +205,8 @@ function OverviewSection({ user }: { user: any }) {
         </div>
       </div>
 
+      <SchedulesPage />
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <SalesTrendChart />
@@ -152,7 +216,6 @@ function OverviewSection({ user }: { user: any }) {
         </div>
       </div>
 
-      <RecentPropertiesTable />
     </motion.div>
   );
 }
@@ -172,3 +235,83 @@ function AdminPageLoading() {
     </div>
   );
 }
+
+// Placeholder components for new sections
+
+const UserManagementPage = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'customers'));
+        const usersData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          // Format joined date if available
+          joined: doc.data().createdAt ? new Date(doc.data().createdAt).toLocaleDateString() : 'N/A'
+        }));
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const handleViewUser = (user: any) => {
+    console.log("View user:", user);
+    // Implement navigation to user details page or modal
+  };
+
+  const handleEditUser = (user: any) => {
+    console.log("Edit user:", user);
+    // Implement user edit functionality
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        // await deleteDoc(doc(db, 'customers', userId));
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+        console.log("User deleted successfully:", userId);
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h2>
+      <UserTable
+        users={users}
+        loading={loading}
+        onView={handleViewUser}
+        onEdit={handleEditUser}
+        onDelete={handleDeleteUser}
+      />
+    </div>
+  );
+};
+
+const SalesAnalyticsPage = () => {
+  return (
+    <div className="text-gray-900 dark:text-white">
+      <h2 className="text-2xl font-bold mb-4">Sales Analytics</h2>
+      <p>Sales analytics content goes here.</p>
+    </div>
+  );
+};
+
+const SettingsPage = () => {
+  return (
+    <div className="text-gray-900 dark:text-white">
+      <h2 className="text-2xl font-bold mb-4">Settings</h2>
+      <p>Settings content goes here.</p>
+    </div>
+  );
+};

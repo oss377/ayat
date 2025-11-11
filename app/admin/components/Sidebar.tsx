@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import { useRouter } from 'next/navigation';
-
-type AdminSection = 'overview' | 'upload' | 'manage';
+import { collection, getDocs } from 'firebase/firestore';
+import { User } from 'firebase/auth';
+type AdminSection = 'overview' | 'upload' | 'manage' | 'detail' | 'analytics' | 'users' | 'settings' | 'schedules';
 
 interface SidebarProps {
   activeSection: AdminSection;
@@ -18,6 +19,7 @@ const navItems = [
   { key: 'overview', label: 'Overview', icon: 'dashboard' },
   { key: 'upload', label: 'Upload Property', icon: 'cloud_upload' },
   { key: 'manage', label: 'Property Management', icon: 'apartment' },
+  { key: 'users', label: 'User Management', icon: 'group' },
 ] as const;
 
 export default function Sidebar({
