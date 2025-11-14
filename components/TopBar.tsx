@@ -23,6 +23,14 @@ interface TopBarProps {
   };
 }
 
+interface Notification {
+  id: string;
+  isRead: boolean;
+  message: string;
+  timestamp: any; // Or a more specific Firebase Timestamp type if you have it imported
+  [key: string]: any;
+}
+
 const NotificationDetailModal = ({ notification, onClose }: { notification: any, onClose: () => void }) => {
   if (!notification) return null;
 
@@ -57,7 +65,7 @@ const NotificationDetailModal = ({ notification, onClose }: { notification: any,
 };
 const Notifications = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -67,11 +75,7 @@ const Notifications = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // Sort the notifications on the client-side
-      notifs.sort((a, b) => {
-        return (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0);
-      });
+      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.isRead).length);
     });
@@ -79,7 +83,7 @@ const Notifications = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       await updateDoc(doc(db, 'notifications', notification.id), { isRead: true });
     }
