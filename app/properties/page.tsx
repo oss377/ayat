@@ -2,10 +2,11 @@
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/app/firebaseConfig';
 import { useLang } from '@/contexts/LanguageContext';
-import { ArrowLeft, Search, Bed, Bath, Home, MapPin, Filter, X, Sun, Moon } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import { ArrowLeft, Search, Bed, Bath, Home, MapPin, Filter, X, Sun, Moon, Bookmark } from 'lucide-react';
 import PropertyDetails from '@/components/propertyDetail';
 
 interface Property {
@@ -35,19 +36,24 @@ function PropertiesClientPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('id');
+  const { user } = useUser();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [filtered, setFiltered] = useState<Property[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'sale' | 'rent'>('all');
+  const [filter, setFilter] = useState<'all' | 'sale' | 'rent'>((searchParams.get('filter') as 'all' | 'sale' | 'rent') || 'all');
 
   // Filters
-  const [locationFilter, setLocationFilter] = useState<string>('all');
-  const [sizeFilter, setSizeFilter] = useState<string>('all');
-  const [floorFilter, setFloorFilter] = useState<string>('');
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>('all');
-  const [bedFilter, setBedFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>(searchParams.get('locationFilter') || 'all');
+  const [sizeFilter, setSizeFilter] = useState<string>(searchParams.get('sizeFilter') || 'all');
+  const [floorFilter, setFloorFilter] = useState<string>(searchParams.get('floorFilter') || '');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>(searchParams.get('propertyTypeFilter') || 'all');
+  const [bedFilter, setBedFilter] = useState<string>(searchParams.get('bedFilter') || 'all');
+
+  // Save Search State
+  const [isSavingSearch, setIsSavingSearch] = useState(false);
+  const [saveSearchFeedback, setSaveSearchFeedback] = useState('');
 
   // Theme (optional auto-detect)
   const [isDark, setIsDark] = useState(false);
@@ -133,6 +139,53 @@ function PropertiesClientPage() {
     setSizeFilter('all');
     setFloorFilter('');
     setBedFilter('all');
+  };
+
+  const handleSaveSearch = async () => {
+    if (!user) {
+      setSaveSearchFeedback('Please log in to save searches.');
+      setTimeout(() => setSaveSearchFeedback(''), 3000);
+      return;
+    }
+
+    const criteria = {
+      search,
+      filter,
+      locationFilter,
+      propertyTypeFilter,
+      sizeFilter,
+      floorFilter,
+      bedFilter,
+    };
+
+    const isFilterActive = Object.values(criteria).some(
+      (val) => val && val !== 'all' && val !== ''
+    );
+
+    if (!isFilterActive) {
+      setSaveSearchFeedback('Please apply a filter before saving.');
+      setTimeout(() => setSaveSearchFeedback(''), 3000);
+      return;
+    }
+
+    setIsSavingSearch(true);
+    setSaveSearchFeedback('');
+
+    try {
+      await addDoc(collection(db, 'savedSearches'), {
+        userEmail: user.email,
+        criteria,
+        propertyIds: filtered.map(p => p.id),
+        savedAt: serverTimestamp(),
+      });
+      setSaveSearchFeedback('Search saved successfully!');
+    } catch (error) {
+      console.error('Error saving search:', error);
+      setSaveSearchFeedback('Failed to save search.');
+    } finally {
+      setIsSavingSearch(false);
+      setTimeout(() => setSaveSearchFeedback(''), 3000);
+    }
   };
 
   if (loading) {
@@ -294,19 +347,34 @@ function PropertiesClientPage() {
                   </select>
                 </div>
 
-                <div className="mt-6 flex justify-center lg:col-span-full">
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 lg:col-span-full">
                   <button
                     onClick={resetFilters}
                     className="flex items-center gap-2 px-5 py-3 sm:px-6 
                       bg-gradient-to-r from-red-500 to-pink-500 
                       hover:from-red-600 hover:to-pink-600
                       text-white font-bold rounded-full 
-                      shadow-xl hover:shadow-2xl 
+                      shadow-xl hover:shadow-2xl
                       transform hover:scale-105 transition-all duration-300"
                   >
                     <X className="h-5 w-5" />
                     Reset All Filters
                   </button>
+                  <button
+                    onClick={handleSaveSearch}
+                    disabled={isSavingSearch}
+                    className="flex items-center gap-2 px-5 py-3 sm:px-6 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:scale-100"
+                  >
+                    {isSavingSearch ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+                    ) : (
+                      <Bookmark className="h-5 w-5" />
+                    )}
+                    {isSavingSearch ? 'Saving...' : 'Save Search'}
+                  </button>
+                </div>
+                <div className="text-center mt-4 h-4">
+                  {saveSearchFeedback && <p className={`text-sm ${saveSearchFeedback.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>{saveSearchFeedback}</p>}
                 </div>
               </div>
             </div>

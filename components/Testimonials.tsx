@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const testimonials = [
@@ -45,6 +46,7 @@ const testimonials = [
 export default function Testimonials() {
   const { t, lang } = useLang();
   const [idx, setIdx] = useState(0);
+  const router = useRouter();
 
   const next = () => setIdx((i) => (i + 1) % testimonials.length);
   const prev = () => setIdx((i) => (i - 1 + testimonials.length) % testimonials.length);
@@ -124,8 +126,13 @@ export default function Testimonials() {
         </div>
 
         <div className="mt-12 text-center">
-          <motion.button className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-all shadow-lg" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            {t('discoverBtn')}
+          <motion.button
+            onClick={() => router.push('/properties')}
+            className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-all shadow-lg"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {t('discoverBtn') || 'Discover Your New Home'}
           </motion.button>
         </div>
       </div>

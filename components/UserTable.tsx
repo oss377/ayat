@@ -26,7 +26,7 @@ export default function UserTable({
         <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-750/60 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 dark:supports-[backdrop-filter]:bg-gray-800/60 sticky top-0 z-10">
           <tr >
             <th className="px-4 py-3 font-semibold">User</th>
-            <th className="px-4 py-3 font-semibold">Contact</th> {/* Fixed: This was likely intended to be part of the table header */}
+            <th className="px-4 py-3 font-semibold">Contact</th>
             <th className="px-4 py-3 font-semibold">Role</th>
             <th className="px-4 py-3 font-semibold">Date Joined</th>
             <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -55,7 +55,7 @@ export default function UserTable({
               </td>
               <td className="px-4 py-3">
                 <div className="font-medium">{user.email || 'N/A'}</div>
-                <div className="text-xs text-gray-500">{user.phone || 'No phone'}</div>
+                <div className="text-xs text-gray-500">{user.phone || 'N/A'}</div>
               </td>
               <td className="px-4 py-3">
                 <span

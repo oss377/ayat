@@ -1,71 +1,110 @@
 // app/user/components/SavedPropertiesSection.tsx
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { db } from '@/app/firebaseConfig';
+import { collection, query, where, getDocs, documentId } from 'firebase/firestore';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+interface Property {
+  id: string;
+  [key: string]: any;
+}
+
+const PropertyCard = ({ property }: { property: Property }) => {
+  const router = useRouter();
+  return (
+    <div
+      onClick={() => router.push(`/?id=${property.id}`)}
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105 group border dark:border-gray-700"
+    >
+      <div className="relative">
+        <Image
+          src={property.photoURLs?.[0] || 'https://via.placeholder.com/400x300.png?text=No+Image'}
+          alt={property.title || 'Property Image'}
+          width={400}
+          height={300}
+          className="w-full h-48 object-cover"
+        />
+      </div>
+      <div className="p-4">
+        <h4 className="font-bold text-lg text-gray-800 dark:text-white truncate group-hover:text-primary">
+          {property.title || 'Untitled Property'}
+        </h4>
+        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+          {property.location || 'No location'}
+        </p>
+        <p className="text-xl font-extrabold text-primary mt-2">
+          {property.price ? `$${Number(property.price).toLocaleString()}` : 'Price N/A'}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default function SavedPropertiesSection() {
-  const [alert1, setAlert1] = useState(true);
-  const [alert2, setAlert2] = useState(false);
   const { user } = useUser();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const properties = [
-    {
-      address: '123 Main St',
-      price: '$500,000',
-      beds: 3,
-      baths: 2,
-      sqft: 1800,
-      img: user?.avatar || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994',
-      alert: alert1,
-      setAlert: setAlert1,
-    },
-    {
-      address: '456 Oak Ave',
-      price: '$650,000',
-      beds: 4,
-      baths: 3,
-      sqft: 2200,
-      img: user?.avatar || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c',
-      alert: alert2,
-      setAlert: setAlert2,
-    },
-  ];
+  useEffect(() => {
+    const fetchSavedProperties = async () => {
+      if (!user?.email ) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const savedRef = collection(db, 'savedProperties');
+        const q = query(savedRef, where('userEmail', '==', user.email));
+        const savedSnapshot = await getDocs(q);
+        const propertyIds = savedSnapshot.docs.map((doc) => doc.data().propertyId);
+
+        if (propertyIds.length === 0) {
+          setProperties([]);
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Fetch the full details for those properties
+        const propertiesRef = collection(db, 'properties');
+        const propertiesQuery = query(propertiesRef, where(documentId(), 'in', propertyIds));
+        const propertiesSnapshot = await getDocs(propertiesQuery);
+
+        const propertiesData = propertiesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        // DEBUG: Log the fetched properties to inspect their structure
+        console.log('Fetched saved properties data:', propertiesData);
+
+        setProperties(propertiesData as Property[]);
+      } catch (error) {
+        console.error('Error fetching saved properties:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSavedProperties();
+  }, [user]);
+
+  if (loading) {
+    return <div className="text-center py-10">Loading your saved properties...</div>;
+  }
+
+  if (properties.length === 0) {
+    return <div className="text-center py-10 text-gray-500">You haven't saved any properties yet.</div>;
+  }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold text-text-color dark:text-white">Saved Properties</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {properties.map((p, i) => (
-          <div key={i} className="border rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-            <div
-              className="h-48 bg-cover bg-center"
-              style={{ backgroundImage: `url("${p.img}")` }}
-            />
-            <div className="p-3">
-              <p className="font-bold text-text-color dark:text-white">{p.address}</p>
-              <p className="text-primary font-semibold">{p.price}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {p.beds} Bed | {p.baths} Bath | {p.sqft} sqft
-              </p>
-              <div className="flex items-center justify-between mt-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={p.alert}
-                    onChange={() => p.setAlert(!p.alert)}
-                    className="rounded text-primary"
-                  />
-                  Price Alert
-                </label>
-                <button>
-                  <span className="material-symbols-outlined text-gray-500">more_vert</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {properties.map((prop) => (
+        <PropertyCard key={prop.id} property={prop} />
+      ))}
     </div>
   );
 }
